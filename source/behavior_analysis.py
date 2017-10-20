@@ -80,3 +80,57 @@ def get_subject_data(subject, sessions, task, keys, indices,
     all_sessions.loc[all_sessions.errors >= 180, 'errors'] -= 360
 
     return all_sessions
+
+
+def add_columns(df):
+    """Add columns to df.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+      Data Frame for a subject.
+
+    Returns
+    -------
+    df : pandas.DataFrame
+      Updated Data Frame.
+    
+    """
+    key = 'stimulus_angles'
+    prev_stim = np.insert(np.array(df[key])[:-1], 0, np.nan)
+    future_stim = np.insert(np.array(df[key])[1:], len(df[key]) - 1,
+                            np.nan)
+    prev_delay = np.insert(np.array(df.delays, dtype=float)[:-1], 0,
+                           np.nan)
+    n_trials_per_session = 25
+    # The first trial of each session (not just the overall first
+    # trial) has no previous stimulus.
+    prev_stim[::n_trials_per_session] = np.nan
+    prev_delay[::n_trials_per_session] = np.nan
+    # The last trial of each session (not just the overall
+    # last trial) has no future stimulus.
+    future_stim[n_trials_per_session-1::n_trials_per_session] = np.nan
+    df['prev_stim'] = prev_stim
+    df['prev_delay'] = prev_delay
+    df['future_stim'] = future_stim
+    d_stim = prev_stim - np.array(df[key])
+    d_stim_future = future_stim - np.array(df[key])
+    # Correct case that difference is less than -180.
+    mask = ~np.isnan(d_stim)
+    mask[mask] &= d_stim[mask] < -180
+    d_stim[mask] += 360
+    # Correct case that difference is greater than 180.
+    mask = ~np.isnan(d_stim)
+    mask[mask] &= d_stim[mask] >= 180
+    d_stim[mask] -= 360
+    # Make the same corrections for d_stim_future.
+    mask = ~np.isnan(d_stim_future)
+    mask[mask] &= d_stim_future[mask] < -180
+    d_stim_future[mask] += 360
+    mask = ~np.isnan(d_stim_future)
+    mask[mask] &= d_stim_future[mask] >= 180
+    d_stim_future[mask] -= 360
+    # Add columns to df.
+    df['d_stim'] = d_stim
+    df['d_stim_future'] = d_stim_future
+    return df
