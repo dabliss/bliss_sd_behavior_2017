@@ -71,16 +71,8 @@ def get_subject_data(subject, sessions, task, keys, indices,
     all_sessions.loc[all_sessions.response_angle < 0, 'response_angle'] += 360
 
     # Add a column for errors.
-    if n_stimuli_per_trial == 1:
-        all_sessions['errors'] = (all_sessions.response_angle -
-                                  all_sessions.stimulus_angles)
-    elif n_stimuli_per_trial == 2:
-        errors = np.empty_like(all_sessions.response_angle)
-        for i in range(len(errors)):
-            errors[i] = (all_sessions.response_angle[i] -
-                         eval('all_sessions.stimulus_angle_%d[i]' %
-                              all_sessions.cue[i]))
-        all_sessions['errors'] = errors
+    all_sessions['errors'] = (all_sessions.response_angle -
+                              all_sessions.stimulus_angles)
         
     # Correct case that difference is less than -180.
     all_sessions.loc[all_sessions.errors < -180, 'errors'] += 360
