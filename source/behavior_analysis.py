@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import numpy as np
 from scipy import io as sio
@@ -474,3 +476,198 @@ def save_for_permutation(data_frames, sub_nums, task_name='', perception=False,
         np.save(d_stim_name, d_stim_rad)
         np.save(error_name, error_rad)
     
+
+def perform_permutation_test(data_frames, labels, concat=False,
+                             use_clifford=False, future=False, task_name='',
+                             two_tailed=False):
+
+    """Compute p-values for the significance of the Gabor fit.
+
+    Parameters
+    ----------
+    data_frames : tuple
+      One data frame for each subject.
+
+    labels : tuple
+      Label for each data frame (subject number, an integer).
+
+    concat : boolean (optional)
+      Whether or not to concatenate the data frames into a super
+      subject.
+
+    use_clifford : boolean (optional)
+      Whether or not to use Clifford's tilt model instead of the Gabor.
+
+    future : boolean (optional)
+      Whether or not to use future_d_stim as d_stim.
+
+    task_name : string (optional)
+      '' (default) or 'var_ITI'.
+
+    two_tailed : boolean (optional)
+      Whether to do two-tailed test.
+
+    """
+
+    results_dir = '/home/despo/dbliss/dopa_net/results/bliss_behavior/fig_1/'
+
+    if concat:
+        diff_rad = np.array([])
+        error_rad = np.array([])
+    
+    for i, lab in enumerate(labels):
+
+        df = data_frames[i]
+        if not future:
+            diff = np.array(df['d_stim'])
+        else:
+            diff = np.array(df['d_stim_future'])
+        ind = ~np.isnan(diff)
+        diff = diff[ind]
+
+        if concat:
+            diff_rad = np.concatenate([diff_rad, np.deg2rad(diff)])
+        else:
+            diff_rad = np.deg2rad(diff)
+
+        error = np.array(df['global_resid_error'])
+
+        error = error[ind]
+        
+        if concat:
+            error_rad = np.concatenate([error_rad, np.deg2rad(error)])
+        else:
+            error_rad = np.deg2rad(error)
+
+        if not concat:
+
+            if not use_clifford:
+                actual_a, actual_w, _ = fit_dog(error_rad, diff_rad)
+            else:
+                actual_c, actual_s, actual_m, _ = fit_clifford(error_rad,
+                                                               diff_rad)
+
+            if not use_clifford:
+                perm_res = np.loadtxt(os.path.join(
+                        results_dir,
+                        'permutations_dog_all_delays_' +
+                        's%03d%s.txt' % (lab, task_name)))
+                assert perm_res.shape[0] == 10000
+                a_permuted = perm_res[:, 0]
+                w_permuted = perm_res[:, 1]
+                n_permutations = perm_res.shape[0]
+
+            else:
+                perm_res = np.loadtxt(os.path.join(
+                        results_dir,
+                        'permutations_clifford_all_delays_' +
+                        's%03d%s.txt' % (lab, task_name)))
+                assert perm_res.shape[0] == 10000
+                c_permuted = perm_res[:, 0]
+                s_permuted = perm_res[:, 1]
+                m_permuted = perm_res[:, 2]
+                n_permutations = perm_res.shape[0]
+                    
+            if not use_clifford:
+
+                # Compute the peak-to-peak.
+                theta = np.linspace(-np.pi, np.pi, 1000)
+                fit = dog(theta, actual_a, actual_w)
+                p2p_actual = np.sign(actual_a) * (fit.max() - fit.min())
+
+                # Compute the permuted peak-to-peaks.
+                p2p_permuted = np.empty(n_permutations)
+                for i in range(n_permutations):
+                    fit = dog(theta, a_permuted[i], w_permuted[i])
+                    peak_to_peak = np.sign(a_permuted[i]) * (fit.max() -
+                                                             fit.min())
+                    p2p_permuted[i] = peak_to_peak
+
+                if actual_a < 0:
+                    c_p = np.count_nonzero(p2p_actual >
+                                           p2p_permuted) / float(
+                        n_permutations)
+                elif actual_a > 0:
+                    c_p = np.count_nonzero(p2p_permuted >
+                                           p2p_actual) / float(
+                        n_permutations)
+                else:
+                    raise ValueError('a is zero!')
+                print 'p-value:', c_p, 'p2p:', p2p_actual
+
+            else:
+
+                # Compute the peak-to-peak.
+                theta = np.linspace(-np.pi, np.pi, 1000)
+                fit = actual_m * clifford(theta, actual_c, actual_s)
+                p2p_actual = actual_m * (fit.max() - fit.min())
+
+                # Compute the permuted peak-to-peaks.
+                p2p_permuted = np.empty(n_permutations)
+                for i in range(n_permutations):
+                    fit = m_permuted[i] * clifford(theta, c_permuted[i],
+                                                   s_permuted[i])
+                    peak_to_peak = m_permuted[i] * (fit.max() - fit.min())
+                    p2p_permuted[i] = peak_to_peak
+
+                if actual_m < 0:
+                    c_p = np.count_nonzero(p2p_actual >
+                                           p2p_permuted) / float(
+                        n_permutations)
+                elif actual_m > 0:
+                    c_p = np.count_nonzero(p2p_permuted >
+                                           p2p_actual) / float(
+                        n_permutations)
+                else:
+                    raise ValueError('m is zero!')
+                print 's%03d: p2p:' % (lab,), c_p, 'm:', actual_m
+                                         
+    if concat:
+
+        actual_a, actual_w, _ = fit_dog(error_rad, diff_rad)
+
+        sub_string = '_'.join('%03d' % (lab,) for lab in labels)
+        if not future:
+            perm_res = np.loadtxt(os.path.join(results_dir,
+                                               'permutations_dog_all_delays' +
+                                               '_s%s%s.txt'
+                                               % (sub_string, task_name)))
+        else:
+            perm_res = np.loadtxt(os.path.join(
+                    results_dir, 'permutations_dog_all_delays_future_'
+                    + 's%s%s.txt' % (sub_string, task_name)))
+
+        n_permutations = perm_res.shape[0]
+        assert n_permutations == 10000
+
+        a_permuted = perm_res[:, 0]
+        w_permuted = perm_res[:, 1]
+
+        # Compute the peak-to-peak.
+        theta = np.linspace(-np.pi, np.pi, 1000)
+        fit = dog(theta, actual_a, actual_w)
+        p2p_actual = np.sign(actual_a) * (fit.max() - fit.min())
+
+        # Compute the permuted peak-to-peaks.
+        p2p_permuted = np.empty(n_permutations)
+        for i in range(n_permutations):
+            fit = dog(theta, a_permuted[i], w_permuted[i])
+            peak_to_peak = np.sign(a_permuted[i]) * (fit.max() - fit.min())
+            p2p_permuted[i] = peak_to_peak
+
+        if two_tailed:
+            c_p = np.count_nonzero(np.abs(p2p_permuted) >
+                                   abs(p2p_actual)) / float(n_permutations)
+        else:
+            if np.sign(actual_a) < 0:
+                c_p = np.count_nonzero(p2p_actual >
+                                       p2p_permuted) / float(
+                    n_permutations)
+            elif np.sign(actual_a) > 0:
+                c_p = np.count_nonzero(p2p_permuted >
+                                       p2p_actual) / float(
+                    n_permutations)
+            else:
+                raise ValueError('a is zero!')
+
+        print 'p-value:', c_p, 'p2p:', np.rad2deg(p2p_actual)

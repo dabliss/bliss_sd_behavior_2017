@@ -40,7 +40,7 @@ if __name__ == '__main__':
     data_dir = package_dir + 'behavioral_experiments/psychtoolbox/data/'
 
     n_permutations = 10
-    params = np.empty((n_permutations, 4))
+    params = np.empty((n_permutations, 3))
 
     # Load data.
     if isinstance(sub_num, int):
