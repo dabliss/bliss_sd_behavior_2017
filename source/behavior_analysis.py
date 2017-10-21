@@ -353,3 +353,124 @@ def print_fit_goodness(data_frames):
     print 'Clifford - DoG:'
     print (aic_c_values[0, :] - aic_c_values[1, :]).mean()
     print (aic_c_values[0, :] - aic_c_values[1, :]).std() / np.sqrt(n_subs)
+
+
+def save_for_permutation(data_frames, sub_nums, task_name='', perception=False,
+                         only_delay=None, previous=False, future=False):
+
+    """Save d_stim and global_resid_error for permutation tests.
+
+    Parameters
+    ----------
+    data_frames : tuple
+      One data frame for each subject.
+
+    sub_nums : tuple
+      Subject numbers
+
+    task_name : string (optional)
+      Specifier for the task.
+
+    perception : boolean (optional)
+      Whether to save the 0s delay (True) or all the other delays
+      (False).
+
+    only_delay : integer (optional)
+      Only delay to use.
+
+    previous : boolean (optional)
+      Whether or not to use the previous trial's delay (as opposed to the
+      current trial's).
+
+    future : boolean (optional)
+      Whether or not to use future_d_stim as d_stim.
+
+    """
+    
+    package_dir = '/home/despo/dbliss/dopa_net/'
+    data_dir = package_dir + 'behavioral_experiments/psychtoolbox/data/'
+
+    if perception:
+        per_string = '_perception'
+    else:
+        per_string = ''
+
+    for i, (df, sub) in enumerate(zip(data_frames, sub_nums)):
+        f_name = data_dir + 's%03d' % sub
+
+        # Get d_stim_name.
+        if not previous:
+            try:
+                d_stim_name = f_name + '_d_stim%s%s%02d.npy' % (task_name,
+                                                                per_string,
+                                                                only_delay)
+            except TypeError:
+                if perception:
+                    d_stim_name = f_name + '_d_stim%s%s.npy' % (task_name,
+                                                                per_string)
+                else:
+                    if not future:
+                        d_stim_name = f_name + '_d_stim%s_all_delays.npy' % (
+                            task_name,)
+                    else:
+                        d_stim_name = (f_name +
+                                       '_d_stim%s_all_delays_future.npy' % (
+                                task_name,))
+        else:
+            d_stim_name = f_name + '_d_stim%s%s%02d_previous.npy' % (
+                task_name, per_string, only_delay)
+
+        # Get d_stim.
+        if perception:
+            d_stim = np.array(df.loc[df.delays == 0, 'd_stim'])
+        elif only_delay is None:
+            if not future:
+                d_stim = np.array(df['d_stim'])
+            else:
+                d_stim = np.array(df['d_stim_future'])
+        else:
+            if not previous:
+                d_stim = np.array(df.loc[df.delays == only_delay, 'd_stim'])
+            else:
+                d_stim = np.array(df.loc[df.prev_delay == only_delay, 'd_stim'])
+        ind = ~np.isnan(d_stim)
+        d_stim_rad = np.deg2rad(d_stim[ind])
+
+        # Get error_name.
+        if not previous:
+            try:
+                error_name = (f_name + '_global_resid_error%s%s%02d.npy' % (
+                    task_name, per_string, only_delay))
+            except TypeError:
+                if perception:
+                    error_name = (f_name + '_global_resid_error%s%s.npy' % (
+                        task_name, per_string))
+                else:
+                    if not future:
+                        error_name = (f_name + '_global_resid_error' +
+                                      '%s_all_delays.npy' % (task_name,))
+                    else:
+                        error_name = (f_name + '_global_resid_error' +
+                                      '%s_all_delays_future.npy' %
+                                      (task_name,))
+        else:
+            error_name = (f_name + '_global_resid_error%s%s%02d_previous.npy' %
+                          (task_name, per_string, only_delay))
+
+        # Get error.
+        if not previous:
+            if perception:
+                error = np.array(df.loc[df.delays == 0, 'global_resid_error'])
+            elif only_delay is None:
+                error = np.array(df['global_resid_error'])
+            else:
+                error = np.array(df.loc[df.delays == only_delay,
+                                        'global_resid_error'])
+        else:
+            error = np.array(df.loc[df.prev_delay == only_delay,
+                                    'global_resid_error'])
+        error_rad = np.deg2rad(error[ind])
+        
+        np.save(d_stim_name, d_stim_rad)
+        np.save(error_name, error_rad)
+    
