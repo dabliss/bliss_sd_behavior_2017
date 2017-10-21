@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 from scipy import io as sio
+import matlab
+import matlab.engine
 
 
 def get_subject_data(subject, sessions, task, keys, indices,
@@ -151,3 +153,35 @@ def cut_bad_trials(df, iti=False):
             after_bad_ind = after_bad_ind[:-1]
         df.loc[after_bad_ind, ['d_stim', 'prev_stim']] = np.nan
     return df.drop(bad_ind)
+
+
+def get_sys_error(df):
+    """Get the systematic error as a function of stimulus location.
+
+    Add 'global_sys_error', 'resid_error', 'prev_stim', and 'd_stim' to
+    df.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+      Data Frame for a subject.
+
+    Returns
+    -------
+    df : pandas.DataFrame
+      Updated Data Frame.
+    
+    """
+    eng = matlab.engine.start_matlab()
+    stimulus_angles = df['stimulus_angles']
+    errors = df['errors']
+    n_trials = len(stimulus_angles)
+    x = matlab.double(list(np.array([stimulus_angles,
+                                     stimulus_angles + 360,
+                                     stimulus_angles + 720]).flatten()))
+    y = matlab.double(list(np.tile(errors, 3)))
+    smoothed = eng.smooth(x, y, 155, 'loess')
+    sys_error = np.squeeze(np.array(smoothed)[n_trials:n_trials * 2])
+    df['global_sys_error'] = sys_error
+    df['global_resid_error'] = df['errors'] - df['global_sys_error']
+    return df
