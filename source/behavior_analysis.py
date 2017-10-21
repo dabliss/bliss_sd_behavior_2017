@@ -134,3 +134,20 @@ def add_columns(df):
     df['d_stim'] = d_stim
     df['d_stim_future'] = d_stim_future
     return df
+
+
+def cut_bad_trials(df, iti=False):
+    """Cut trials where response was near origin."""
+    mean = df.errors.mean()
+    std = df.errors.std()
+    bad_ind = df.index[(df.response_eccentricity < 5) |
+                       (df.errors > mean + std * 3) |
+                       (df.errors < mean - std * 3)]
+    after_bad_ind = bad_ind + 1
+    if not iti:
+        df.loc[after_bad_ind, ['d_stim', 'prev_delay', 'prev_stim']] = np.nan
+    else:
+        if after_bad_ind[-1] == 1008:
+            after_bad_ind = after_bad_ind[:-1]
+        df.loc[after_bad_ind, ['d_stim', 'prev_stim']] = np.nan
+    return df.drop(bad_ind)
