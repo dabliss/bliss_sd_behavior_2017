@@ -12,4 +12,4 @@ Please send bug reports and questions to dpb6@nyu.edu.
     POINTS.
 
     Stop Point 1: Run scripts/perform_permutation_test_dog_all_delays.py
-                  1,000 times (k = 1 to k = 1000).
+                  1,000 times (--k 1 to --k 1000).
