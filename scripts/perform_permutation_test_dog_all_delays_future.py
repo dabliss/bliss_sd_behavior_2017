@@ -45,30 +45,30 @@ if __name__ == '__main__':
     # Load data.
     if isinstance(sub_num, int):
         f_name = data_dir + 's%03d' % sub_num
-        diff_rad = np.load(f_name + '_d_stim%s_all_delays.npy' % task_name)
+        diff_rad = np.load(f_name + '_d_stim%s_all_delays_future.npy' %
+                           task_name)
         resid_error_rad = np.load(f_name +
-                                  '_global_resid_error%s_all_delays.npy' %
-                                  task_name)
+                                  '_global_resid_error%s_all_delays_future.npy'
+                                  % task_name)
     else:
         diff_rad = np.array([])
         resid_error_rad = np.array([])
         for n in sub_num:
             f_name = data_dir + 's%03d' % n
-            diff_rad = np.concatenate([diff_rad,
-                                       np.load(f_name +
-                                               '_d_stim%s_all_delays.npy'
-                                               % task_name)])
+            diff_rad = np.concatenate([
+                    diff_rad,
+                    np.load(f_name + '_d_stim%s_all_delays_future.npy' %
+                            task_name)])
             resid_error_rad = np.concatenate(
                 [resid_error_rad,
-                 np.load(f_name + '_global_resid_error%s_all_delays.npy'
-                         % task_name)])
-
-    n_datapoints = len(diff_rad)
+                 np.load(f_name +
+                         '_global_resid_error%s_all_delays_future.npy' %
+                         task_name)])
 
     # Permute d_stim.
     for i_perm in range(n_permutations):
-        ind = np.random.choice(np.arange(n_datapoints), n_datapoints)
-        params[i_perm, :] = ba.fit_dog(resid_error_rad[ind], diff_rad[ind])
+        np.random.shuffle(diff_rad)
+        params[i_perm, :] = ba.fit_dog(resid_error_rad, diff_rad)
 
     # Write to the file.
     flags = os.O_CREAT | os.O_WRONLY
@@ -80,12 +80,12 @@ if __name__ == '__main__':
         sub_name = '_'.join(['%03d' % (n,) for n in sub_num])
     if task_name != '':
         f_name = os.path.join(results_dir,
-                              'bootstrap_dog_all_delays_s%s_%s.txt' %
+                              'permutations_dog_all_delays_future_s%s_%s.txt' %
                               (sub_name, task_name))
     else:
         f_name = os.path.join(results_dir,
-                              'bootstrap_dog_all_delays_s%s.txt' %
-                              (sub_name,))
+                              'permutations_dog_all_delays_future_s%s.txt' %
+                              sub_name)
     file_handle = os.open(f_name, flags)
     fcntl.flock(file_handle, fcntl.LOCK_EX)
     with os.fdopen(file_handle, 'a') as f:
