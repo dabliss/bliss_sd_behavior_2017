@@ -671,3 +671,58 @@ def perform_permutation_test(data_frames, labels, concat=False,
                 raise ValueError('a is zero!')
 
         print 'p-value:', c_p, 'p2p:', np.rad2deg(p2p_actual)
+
+
+def print_confidence_interval(data_frames, labels, future=False, task_name=''):
+    
+    results_dir = '/home/despo/dbliss/dopa_net/results/bliss_behavior/fig_1/'
+    sub_string = '_'.join('%03d' % (lab,) for lab in labels)
+    
+    concat_diff_rad = np.array([])
+    concat_error_rad = np.array([])
+
+    for lab, df in zip(labels, data_frames):
+
+        if not future:
+            diff = np.array(df['d_stim'])
+        else:
+            diff = np.array(df['d_stim_future'])
+        ind = ~np.isnan(diff)
+        diff_rad = np.deg2rad(diff[ind])
+        concat_diff_rad = np.concatenate([concat_diff_rad, diff_rad])
+
+        error = np.array(df['global_resid_error'])
+        error_rad = np.deg2rad(error[ind])
+        concat_error_rad = np.concatenate([concat_error_rad, error_rad])
+
+    theta = np.linspace(-np.pi, np.pi, 1000)
+    a, w, _ = fit_dog(concat_error_rad, concat_diff_rad)
+    fit = dog(theta, a, w)
+    p2p = np.sign(a) * (fit.max() - fit.min())
+
+    if not future:
+        boot_res = np.loadtxt(os.path.join(results_dir,
+                                           'bootstrap_dog_all_delays_s%s%s.txt'
+                                           % (sub_string, task_name)))
+    else:
+        boot_res = np.loadtxt(os.path.join(
+                results_dir, 'bootstrap_dog_all_delays_future_s%s%s.txt' %
+                (sub_string, task_name)))
+
+    n_permutations = 10000
+    assert boot_res.shape[0] == n_permutations
+    a_permuted = boot_res[:, 0]
+    w_permuted = boot_res[:, 1]
+
+    c_star = np.empty(n_permutations)
+    for i in range(n_permutations):
+        fit = dog(theta, a_permuted[i], w_permuted[i])
+        c_star[i] = np.sign(a_permuted[i]) * (fit.max() - fit.min())
+
+    delta_star = np.sort(c_star - p2p)
+    delta_star_25 = delta_star[int(97.5 / 100 * n_permutations)]
+    delta_star_975 = delta_star[int(2.5 / 100 * n_permutations)]
+    ci_low = p2p - delta_star_25
+    ci_high = p2p - delta_star_975
+
+    print np.rad2deg(ci_low), np.rad2deg(ci_high)
