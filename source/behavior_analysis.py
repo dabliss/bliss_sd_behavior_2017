@@ -1334,3 +1334,134 @@ def plot_ploner_fig_3(df):
     plt.gca().set_ylabel('Variance ($^{\circ^2}$)', fontsize=24)
     plt.tight_layout()
     plt.savefig('ploner_replication.png', bbox_inches='tight')
+
+
+def plot_indiv_subs(data_frames, labels, models, supp=False):
+
+    results_dir = utils._get_results_dir('fig_1', 'bliss_behavior')
+
+    n_subs = len(data_frames)
+    
+    theta = np.linspace(-np.pi, np.pi, 1000)
+    n_permutations = 10000
+    p2p_values = np.empty(n_subs)
+    ci_low = np.empty_like(p2p_values)
+    ci_high = np.empty_like(p2p_values)
+    for i, (df, lab, mod) in enumerate(zip(data_frames, labels, models)):
+    
+        diff = np.array(df['d_stim'])
+        ind = ~np.isnan(diff)
+        error = np.array(df['global_resid_error'])
+        diff_rad = np.deg2rad(diff[ind])
+        error_rad = np.deg2rad(error[ind])
+
+        if mod == 'dog':
+            a, w, _ = fit_dog(error_rad, diff_rad)
+            fit = dog(theta, a, w)
+            p2p_values[i] = np.sign(a) * (fit.max() - fit.min())
+        else:
+            c, s, m, _ = fit_clifford(error_rad, diff_rad)
+            fit = m * clifford(theta, c, s)
+            p2p_values[i] = m * (fit.max() - fit.min())
+
+        boot_res = np.loadtxt(os.path.join(
+                results_dir, 'bootstrap_%s_all_delays_s%03d.txt' % (mod,
+                                                                    lab)))
+        assert boot_res.shape[0] == n_permutations
+        
+        a_boot = boot_res[:, 0]
+        w_boot = boot_res[:, 1]
+        if mod != 'dog':
+            m_boot = boot_res[:, 2]
+        p2p_star = np.empty(n_permutations)
+        for j in range(n_permutations):
+            if mod == 'dog':
+                fit = dog(theta, a_boot[j], w_boot[j])
+                p2p_star[j] = np.sign(a_boot[j]) * (fit.max() - fit.min())
+            else:
+                fit = m_boot[j] * clifford(theta, a_boot[j], w_boot[j])
+                p2p_star[j] = m_boot[j] * (fit.max() - fit.min())
+
+        delta_star = np.sort(p2p_star - p2p_values[i])
+        delta_star_25 = delta_star[int(97.5 / 100 * n_permutations)]
+        delta_star_975 = delta_star[int(2.5 / 100 * n_permutations)]
+        ci_low[i] = p2p_values[i] - delta_star_25
+        ci_high[i] = p2p_values[i] - delta_star_975
+
+    p2p_values = np.rad2deg(p2p_values)
+    ci_low = np.rad2deg(ci_low)
+    ci_high = np.rad2deg(ci_high)
+
+    print p2p_values
+
+    subs = np.arange(n_subs) * 5
+    models = np.array(models)
+    dog_ind = np.where(models == 'dog')[0]
+    dog_subs = subs[dog_ind]
+    dog_p2p = p2p_values[dog_ind]
+    dog_ci_low = ci_low[dog_ind]
+    dog_ci_high = ci_high[dog_ind]
+    cliff_ind = np.where(models == 'clifford')[0]
+    cliff_subs = subs[cliff_ind]
+    cliff_p2p = p2p_values[cliff_ind]
+    cliff_ci_low = ci_low[cliff_ind]
+    cliff_ci_high = ci_high[cliff_ind]
+
+    sig_dog_adapt_ind = np.array([0, 1, 2, 3, 4, 5, 6])
+    sig_dog_sd_ind = np.array([17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+                               30, 31, 32, 33, 34])
+
+    plt.figure(figsize=(9, 6))
+    plt.errorbar(dog_subs, dog_p2p, yerr=(dog_p2p - dog_ci_low,
+                                          dog_ci_high - dog_p2p),
+                 fmt='o', color='k', ecolor='k', elinewidth=2,
+                 markeredgewidth=2)
+    plt.errorbar(cliff_subs, cliff_p2p, yerr=(cliff_p2p - cliff_ci_low,
+                                              cliff_ci_high - cliff_p2p),
+                 fmt='o', color='orange', ecolor='orange', elinewidth=2,
+                 markeredgewidth=2, markeredgecolor='orange')
+    if not supp:
+        plt.text(0.5, dog_ci_high[0] + 0.5, 'b', ha='center', fontsize=24)
+        plt.text(17 * 5 + 0.1, cliff_ci_high[1] + 1.2, 'c', ha='center',
+                 fontsize=24)
+        plt.text(35 * 5 + 0.1, dog_ci_high[-3] + 1.2, 'd', ha='center',
+                 fontsize=24)
+    else:
+        # Use index * 5 + whatever is needed to get it centered.
+        plt.text(0.5, dog_ci_high[0] + 0.5, 's', ha='center', fontsize=18)
+        plt.text(7 * 5 + 0.1, dog_ci_high[7] + 0.5, 's', ha='center',
+                 fontsize=18)
+        # Clifford indices are 16, 17,  21.
+        plt.text(19 * 5 + 0.1, dog_ci_high[17] + 1.2, 's', ha='center',
+                 fontsize=18)
+        plt.text(28 * 5 + 0.1, dog_ci_high[25] + 1.2, 's', ha='center',
+                 fontsize=18)
+        plt.text(29 * 5 + 0.1, dog_ci_high[26] + 1.2, 's', ha='center',
+                 fontsize=18)
+        plt.text(30 * 5 + 0.1, dog_ci_high[27] + 1.2, 's', ha='center',
+                 fontsize=18)
+        plt.text(31 * 5 + 0.1, dog_ci_high[28] + 1.2, 's', ha='center',
+                 fontsize=18)
+        plt.text(36 * 5 + 0.1, dog_ci_high[33] + 1.2, 's', ha='center',
+                 fontsize=18)
+    for i in sig_dog_adapt_ind:
+        plt.text(i * 5, dog_ci_low[i] - 1.0, '*', ha='center', fontsize=24)
+    for i in sig_dog_sd_ind:
+        plt.text(dog_subs[i] - 0.1, dog_ci_high[i] - 0.1, '*', ha='center',
+                 fontsize=24)
+    for i in range(len(cliff_subs)):
+        plt.text(cliff_subs[i] - 0.1, cliff_ci_high[i] - 0.1, '*', ha='center',
+                 fontsize=24)
+    plt.axhline(0, color='k', linestyle='--', linewidth=1)
+    plt.xlim(-5, n_subs * 5)
+    plt.gca().set_yticklabels(plt.gca().get_yticks(), fontsize=18)
+    plt.gca().set_xticklabels([])
+    plt.xlabel('Individual participants', fontsize=24)
+    plt.ylabel('Serial dependence ($^\circ$)', fontsize=24)
+
+    plt.tight_layout()
+    if not supp:
+        plt.savefig('indiv_subs.png', bbox_inches='tight')
+    else:
+        plt.savefig('indiv_subs_supp.png', bbox_inches='tight')
+    
