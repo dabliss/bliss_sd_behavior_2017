@@ -65,3 +65,11 @@ Please send bug reports and questions to dpb6@nyu.edu.
                   immediately below STOP POINT 8 in the notebook.
 
                   Repeat this process for scripts/bootstrap_dog_all.py.
+
+    Stop Point 9: Run scripts/perform_permutation_test_clifford_all_delays.py
+                  1,000 times.
+
+                  Repeat this for each of the other sub_names in the cell
+                  immediately below STOP POINT 9 in the notebook.
+
+                  Repeat this process for scripts/bootstrap_clifford_all.py.
