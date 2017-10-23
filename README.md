@@ -45,3 +45,15 @@ Please send bug reports and questions to dpb6@nyu.edu.
                   3.  Then rerun it 1,000 times.
 
                   Repeat this process for the other delays (6 and 10).
+
+    Stop Point 7: In scripts/bootstrap_dog_perception.py, change sub_name to 8.
+                  Then run this script 1,000 times.
+
+                  In scripts/bootstrap_dog_wm.py, change sub_name to 8.  Change
+                  only_delay to 1.  Then run it 1,000 times.
+
+                  Run scripts/bootstrap_dog_wm.py for the other delays (3, 6,
+                  and 10).
+
+                  Then repeat all the steps in this stop point for sub_names
+                  49, 26, and 1.
