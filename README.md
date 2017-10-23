@@ -22,3 +22,15 @@ Please send bug reports and questions to dpb6@nyu.edu.
 
     Stop Point 4: Run scripts/bootstrap_dog_all_future.py 1,000 times (--k 1 to
                   --k 1000).
+
+    Stop Point 5: Run scripts/perform_permutation_test_dog_perception.py 1,000
+                  times (--k 1 to --k 1000).
+
+                  Then run scripts/perform_permutation_test_dog_wm.py 1,000
+                  times (--k 1 to --k 1000).
+
+                  Update the value of only_delay in
+                  perform_permutation_test_dog_wm.py to be 1.  Then rerun it
+                  1,000 times.
+
+                  Repeat this process for the other delays (3, 6, and 10).
