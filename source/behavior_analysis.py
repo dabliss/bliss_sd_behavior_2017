@@ -726,3 +726,263 @@ def print_confidence_interval(data_frames, labels, future=False, task_name=''):
     ci_high = p2p - delta_star_975
 
     print np.rad2deg(ci_low), np.rad2deg(ci_high)
+
+
+def perform_permutation_test_conditions(data_frames, labels, previous=False,
+                                        use_clifford=True):
+    
+    """Compute p-values for different delay/ITI conditions.
+
+    Parameters
+    ----------
+    data_frames : tuple
+      One data frame for each subject.
+
+    labels : tuple
+      Label for each data frame (subject number, an integer).
+
+    previous : boolean (optional)
+      Whether or not to use the previous trial's delay.
+
+    """
+    
+    results_dir = utils._get_results_dir('fig_1', 'bliss_behavior')
+    delays = np.array([0.0, 1.0, 3.0, 6.0, 10.0])
+    n_delays = len(delays)
+    n_permutations = 10000
+    diff_rad_concat = [np.array([]) for d in delays]
+    error_rad_concat = [np.array([]) for d in delays]
+    for i, lab in enumerate(labels):
+        df = data_frames[i]
+        for j, d in enumerate(delays):
+            if not previous:
+                diff = np.array(df.loc[df.delays == d, 'd_stim'])
+            else:
+                diff = np.array(df.loc[df.prev_delay == d, 'd_stim'])
+            ind = ~np.isnan(diff)
+            diff_rad = np.deg2rad(diff[ind])
+            if not previous:
+                error = np.array(df.loc[df.delays == d, 'global_resid_error'])
+            else:
+                error = np.array(df.loc[df.prev_delay == d,
+                                        'global_resid_error'])
+            error_rad = np.deg2rad(error[ind])
+            diff_rad_concat[j] = np.concatenate([diff_rad_concat[j], diff_rad])
+            error_rad_concat[j] = np.concatenate([error_rad_concat[j],
+                                                  error_rad])
+    actual_c_values = np.empty(n_delays)
+    actual_s_values = np.empty(n_delays)
+    if use_clifford:
+        actual_m_values = np.empty(n_delays)
+    c_values = np.empty((n_permutations, n_delays))
+    s_values = np.empty((n_permutations, n_delays))
+    if use_clifford:
+        m_values = np.empty((n_permutations, n_delays))
+    sub_string = '_'.join('%03d' % (lab,) for lab in labels)
+    for j, d in enumerate(delays):
+        if use_clifford:
+            (actual_c_values[j],
+             actual_s_values[j],
+             actual_m_values[j], _) = fit_clifford(error_rad_concat[j],
+                                                   diff_rad_concat[j])
+        else:
+            (actual_c_values[j],
+             actual_s_values[j], _) = fit_dog(error_rad_concat[j],
+                                              diff_rad_concat[j])
+        if not previous:
+            if j == 0:
+                if use_clifford:
+                    perm_res = np.loadtxt(os.path.join(
+                            results_dir,
+                            'permutations_clifford_perception_s%s.txt'
+                            % sub_string))
+                else:
+                    perm_res = np.loadtxt(os.path.join(
+                            results_dir,
+                            'permutations_dog_perception_s%s.txt'
+                            % sub_string))
+            else:
+                if use_clifford:
+                    perm_res = np.loadtxt(os.path.join(
+                            results_dir,
+                            'permutations_clifford_d%02d_s%s.txt'
+                            % (d, sub_string)))
+                else:
+                    perm_res = np.loadtxt(os.path.join(
+                            results_dir,
+                            'permutations_dog_d%02d_s%s.txt'
+                            % (d, sub_string)))
+        else:
+            if use_clifford:
+                perm_res = np.loadtxt(os.path.join(
+                        results_dir,
+                        'permutations_clifford_d%02d_s%s_previous.txt'
+                        % (d, sub_string)))
+            else:
+                perm_res = np.loadtxt(os.path.join(
+                        results_dir,
+                        'permutations_dog_d%02d_s%s_previous.txt'
+                        % (d, sub_string)))
+
+        assert perm_res.shape[0] == n_permutations
+        c_values[:, j] = perm_res[:, 0]
+        s_values[:, j] = perm_res[:, 1]
+        if use_clifford:
+            m_values[:, j] = perm_res[:, 2]
+
+    # For each delay, compute the peak-to-peak.
+    theta = np.linspace(-np.pi, np.pi, 1000)
+    p2p_actual = np.empty(n_delays)
+    for d in range(n_delays):
+        if use_clifford:
+            fit = actual_m_values[d] * clifford(theta, actual_c_values[d],
+                                                actual_s_values[d])
+            p2p_actual[d] = actual_m_values[d] * (fit.max() - fit.min())
+        else:
+            fit = dog(theta, actual_c_values[d], actual_s_values[d])
+            p2p_actual[d] = np.sign(actual_c_values[d]) * (fit.max() -
+                                                           fit.min())
+
+    # For each delay, compute the permuted peak-to-peaks.
+    p2p_permuted = np.empty((n_permutations, n_delays))
+    for d in range(n_delays):
+        for i in range(n_permutations):
+            if use_clifford:
+                fit = m_values[i, d] * clifford(theta, c_values[i, d],
+                                                s_values[i, d])
+                peak_to_peak = m_values[i, d] * (fit.max() - fit.min())
+            else:
+                fit = dog(theta, c_values[i, d], s_values[i, d])
+                peak_to_peak = np.sign(c_values[i, d]) * (fit.max() -
+                                                          fit.min())
+            p2p_permuted[i, d] = peak_to_peak
+
+    if not previous:
+        # Print significance of each delay.
+        p = np.count_nonzero(np.abs(p2p_permuted[:, 0]) >=
+                             abs(p2p_actual[0])) / float(n_permutations)
+        print '0:', p
+        p = np.count_nonzero(p2p_permuted[:, 1] >= p2p_actual[1]) / \
+                             float(n_permutations)
+        print '1:', p
+        p = np.count_nonzero(p2p_permuted[:, 2] >= p2p_actual[2]) / \
+                             float(n_permutations)
+        print '3:', p
+        p = np.count_nonzero(p2p_permuted[:, 3] >= p2p_actual[3]) / \
+                             float(n_permutations)
+        print '6:', p
+        p = np.count_nonzero(p2p_permuted[:, 4] >= p2p_actual[4]) / \
+                             float(n_permutations)
+        print '10:', p
+
+        # Print significance of the comparisons.
+        p = np.count_nonzero((p2p_permuted[:, 1] - p2p_permuted[:, 0]) >=
+                             (p2p_actual[1] - p2p_actual[0])) / \
+                             float(n_permutations)
+        print '1 > 0:', p
+        p = np.count_nonzero((p2p_permuted[:, 2] - p2p_permuted[:, 0]) >=
+                             (p2p_actual[2] - p2p_actual[0])) / \
+                             float(n_permutations)
+        print '3 > 0:', p
+        p = np.count_nonzero((p2p_permuted[:, 3] - p2p_permuted[:, 0]) >=
+                             (p2p_actual[3] - p2p_actual[0])) / \
+                             float(n_permutations)
+        print '6 > 0:', p
+        p = np.count_nonzero((p2p_permuted[:, 4] - p2p_permuted[:, 0]) >=
+                             (p2p_actual[4] - p2p_actual[0])) / \
+                             float(n_permutations)
+        print '10 > 0:', p
+        p = np.count_nonzero((p2p_permuted[:, 2] - p2p_permuted[:, 1]) >=
+                             (p2p_actual[2] - p2p_actual[1])) / \
+                             float(n_permutations)
+        print '3 > 1:', p
+        p = np.count_nonzero((p2p_permuted[:, 3] - p2p_permuted[:, 1]) >=
+                             (p2p_actual[3] - p2p_actual[1])) / \
+                             float(n_permutations)
+        print '6 > 1:', p
+        p = np.count_nonzero((p2p_permuted[:, 4] - p2p_permuted[:, 1]) >=
+                             (p2p_actual[4] - p2p_actual[1])) / \
+                             float(n_permutations)
+        print '10 > 1:', p
+        p = np.count_nonzero((p2p_permuted[:, 3] - p2p_permuted[:, 2]) >=
+                             (p2p_actual[3] - p2p_actual[2])) / \
+                             float(n_permutations)
+        print '6 > 3:', p
+        p = np.count_nonzero((p2p_permuted[:, 4] - p2p_permuted[:, 2]) >=
+                             (p2p_actual[4] - p2p_actual[2])) / \
+                             float(n_permutations)
+        print '10 > 3:', p
+        p = np.count_nonzero((p2p_permuted[:, 4] - p2p_permuted[:, 3]) >=
+                             (p2p_actual[4] - p2p_actual[3])) / \
+                             float(n_permutations)
+        print '10 > 6:', p
+    else:
+        # Print significance of each delay.
+        p = np.count_nonzero(p2p_permuted[:, 0] >=
+                             p2p_actual[0]) / float(n_permutations)
+        print '0:', p
+        p = np.count_nonzero(p2p_permuted[:, 1] >= p2p_actual[1]) / \
+                             float(n_permutations)
+        print '1:', p
+        p = np.count_nonzero(p2p_permuted[:, 2] >= p2p_actual[2]) / \
+                             float(n_permutations)
+        print '3:', p
+        p = np.count_nonzero(p2p_permuted[:, 3] >= p2p_actual[3]) / \
+                             float(n_permutations)
+        print '6:', p
+        p = np.count_nonzero(p2p_permuted[:, 4] >= p2p_actual[4]) / \
+                             float(n_permutations)
+        print '10:', p
+
+        # Print significance of the comparisons.
+        p = np.count_nonzero(np.abs(p2p_permuted[:, 1] -
+                                    p2p_permuted[:, 0]) >=
+                             abs(p2p_actual[1] - p2p_actual[0])) / \
+                             float(n_permutations)
+        print '1 > 0:', p
+        p = np.count_nonzero(np.abs(p2p_permuted[:, 2] -
+                                    p2p_permuted[:, 0]) >=
+                             abs(p2p_actual[2] - p2p_actual[0])) / \
+                             float(n_permutations)
+        print '3 > 0:', p
+        p = np.count_nonzero(np.abs(p2p_permuted[:, 3] -
+                                    p2p_permuted[:, 0]) >=
+                             abs(p2p_actual[3] - p2p_actual[0])) / \
+                             float(n_permutations)
+        print '6 > 0:', p
+        p = np.count_nonzero(np.abs(p2p_permuted[:, 4] -
+                                    p2p_permuted[:, 0]) >=
+                             abs(p2p_actual[4] - p2p_actual[0])) / \
+                             float(n_permutations)
+        print '10 > 0:', p
+        p = np.count_nonzero(np.abs(p2p_permuted[:, 2] -
+                                    p2p_permuted[:, 1]) >=
+                             abs(p2p_actual[2] - p2p_actual[1])) / \
+                             float(n_permutations)
+        print '3 > 1:', p
+        p = np.count_nonzero(np.abs(p2p_permuted[:, 3] -
+                                    p2p_permuted[:, 1]) >=
+                             abs(p2p_actual[3] - p2p_actual[1])) / \
+                             float(n_permutations)
+        print '6 > 1:', p
+        p = np.count_nonzero(np.abs(p2p_permuted[:, 4] -
+                                    p2p_permuted[:, 1]) >=
+                             abs(p2p_actual[4] - p2p_actual[1])) / \
+                             float(n_permutations)
+        print '10 > 1:', p
+        p = np.count_nonzero(np.abs(p2p_permuted[:, 3] -
+                                    p2p_permuted[:, 2]) >=
+                             abs(p2p_actual[3] - p2p_actual[2])) / \
+                             float(n_permutations)
+        print '6 > 3:', p
+        p = np.count_nonzero(np.abs(p2p_permuted[:, 4] -
+                                    p2p_permuted[:, 2]) >=
+                             abs(p2p_actual[4] - p2p_actual[2])) / \
+                             float(n_permutations)
+        print '10 > 3:', p
+        p = np.count_nonzero(np.abs(p2p_permuted[:, 4] -
+                                    p2p_permuted[:, 3]) >=
+                             abs(p2p_actual[4] - p2p_actual[3])) / \
+                             float(n_permutations)
+        print '10 > 6:', p
+    
