@@ -1151,3 +1151,108 @@ def plot_bars(data_frames, labels, previous=False, use_clifford=True,
     else:
         plt.savefig('plot_bars_previous.png', bbox_inches='tight')
         
+
+def plot_running_avg_with_fit(df, f_name, bin_width=350, bin_step=10,
+                              fixed_ylim=True, single=False):
+    
+    # Get the data.
+    diff = np.array(df['d_stim'])
+    ind = ~np.isnan(diff)
+    diff_rad = np.deg2rad(diff[ind])
+    resid_error = np.array(df['global_resid_error'])
+    resid_error_rad = np.deg2rad(resid_error[ind])
+
+    # Fit the models.
+    a, w, _ = fit_dog(resid_error_rad, diff_rad)
+    c, s, m, _ = fit_clifford(resid_error_rad, diff_rad)
+
+    # Sort the data by d_stim.
+    ind = diff_rad.argsort()
+    diff_rad = diff_rad[ind]
+    resid_error_rad = resid_error_rad[ind]
+
+    # Pad the data.
+    diff_rad = np.concatenate([diff_rad[-bin_width / 2:] - 2 * np.pi, diff_rad,
+                               diff_rad[:bin_width / 2] + 2 * np.pi])
+    resid_error_rad = np.concatenate([resid_error_rad[-bin_width / 2:],
+                                      resid_error_rad,
+                                      resid_error_rad[:bin_width / 2]])
+
+    # Compute the running average.
+    bin_starts = np.arange(0, len(diff_rad) - bin_width, bin_step)
+    bin_stops = bin_starts + bin_width
+    diff_means = np.empty(len(bin_starts))
+    error_means = np.empty_like(diff_means)
+    error_sem = np.empty_like(error_means)
+    for i in range(len(bin_starts)):
+        diff_means[i] = diff_rad[bin_starts[i]:bin_stops[i]].mean()
+        error_selection = resid_error_rad[bin_starts[i]:bin_stops[i]]
+        error_means[i] = error_selection.mean()
+        error_sem[i] = error_selection.std() / np.sqrt(len(error_selection))
+    
+    # Convert to degrees.
+    diff_means = np.rad2deg(diff_means)
+    error_means = np.rad2deg(error_means)
+    error_sem = np.rad2deg(error_sem)
+
+    plt.figure(figsize=(9, 6))
+    
+    # Plot the data.
+    plt.plot(diff_means, error_means, 'k', linewidth=1)
+    plt.fill_between(diff_means,
+                     error_means - error_sem,
+                     error_means + error_sem,
+                     alpha=0.25, color='k')
+
+    plt.axhline(0, color='k', linestyle='--', linewidth=1)
+
+    theta = np.linspace(-np.pi, np.pi, 1000)
+    fit = m * clifford(theta, c, s)
+    p2p = m * (fit.max() - fit.min())
+    print np.rad2deg(p2p)
+    plt.plot(np.rad2deg(theta), np.rad2deg(m * clifford(theta, c, s)),
+             'orange', linewidth=3)
+    fit = dog(theta, a, w)
+    p2p = np.sign(a) * (fit.max() - fit.min())
+    print np.rad2deg(p2p)
+    plt.plot(np.rad2deg(theta), np.rad2deg(dog(theta, a, w)), 'k',
+             linewidth=3)
+
+    if f_name == 'curr_6':
+        col = 'royalblue'
+        p = patches.FancyArrowPatch((0, -np.rad2deg(p2p) / 2),
+                                    (0, np.rad2deg(p2p) / 2),
+                                    arrowstyle='<|-|>',
+                                    mutation_scale=30,
+                                    edgecolor=col,
+                                    facecolor=col)
+        plt.gca().add_patch(p)
+        plt.plot([np.rad2deg(theta[fit.argmin()]), 0],
+                 [-np.rad2deg(p2p) / 2, -np.rad2deg(p2p) / 2], '--',
+                 color=col, linewidth=2)
+        plt.plot([0, np.rad2deg(theta[fit.argmax()])],
+                 [np.rad2deg(p2p) / 2, np.rad2deg(p2p) / 2], '--',
+                 color=col, linewidth=2)
+
+    # Format the figure.
+    plt.xlim(-180, 180)
+    if not single:
+        if f_name.startswith('prev'):
+            plt.ylim(-1.5, 1.5)
+        elif fixed_ylim:
+            plt.ylim(-2.5, 2.5)
+        else:
+            plt.ylim(-2, 2)
+    else:
+        if fixed_ylim:
+            plt.ylim(-4, 4)
+    plt.gca().set_xticks([-180, -90, 0, 90, 180])
+    plt.gca().set_xticklabels(np.array(plt.gca().get_xticks(), dtype=int),
+                              fontsize=18)
+    plt.gca().set_yticklabels(plt.gca().get_yticks(), fontsize=18)
+    plt.ylabel('Error ($^\circ$)', fontsize=24)
+    plt.xlabel('Relative location of previous stimulus ($^\circ$)',
+               fontsize=24)
+
+    plt.savefig('running_avg_%s.png' % f_name, bbox_inches='tight')
+        
