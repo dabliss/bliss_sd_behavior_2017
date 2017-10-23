@@ -57,3 +57,11 @@ Please send bug reports and questions to dpb6@nyu.edu.
 
                   Then repeat all the steps in this stop point for sub_names
                   49, 26, and 1.
+
+    Stop Point 8: In scripts/perform_permutation_test_dog_all_delays.py, change
+                  sub_name to 8.  Then run this script 1,000 times.
+
+                  Repeat this for each of the other sub_names in the cell
+                  immediately below STOP POINT 8 in the notebook.
+
+                  Repeat this process for scripts/bootstrap_dog_all.py.

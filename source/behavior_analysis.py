@@ -593,7 +593,7 @@ def perform_permutation_test(data_frames, labels, concat=False,
                         n_permutations)
                 else:
                     raise ValueError('a is zero!')
-                print 'p-value:', c_p, 'p2p:', p2p_actual
+                print 's%03d' % lab, 'p-value:', c_p, 'p2p:', np.rad2deg(p2p_actual)
 
             else:
 
