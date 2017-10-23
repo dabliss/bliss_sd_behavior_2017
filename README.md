@@ -30,7 +30,18 @@ Please send bug reports and questions to dpb6@nyu.edu.
                   times (--k 1 to --k 1000).
 
                   Update the value of only_delay in
-                  perform_permutation_test_dog_wm.py to be 1.  Then rerun it
+                  perform_permutation_test_dog_wm.py to be 3.  Then rerun it
                   1,000 times.
 
-                  Repeat this process for the other delays (3, 6, and 10).
+                  Repeat this process for the other delays (6 and 10).
+
+    Stop Point 6: Run scripts/bootstrap_dog_perception.py 1,000 times (--k 1 to
+                  --k 1000).
+
+                  Then run scripts/bootstrap_dog_wm.py 1,000 times (--k 1 to
+                  --k 1000).
+
+                  Update the value of only_delay in bootstrap_dog_wm.py to be
+                  3.  Then rerun it 1,000 times.
+
+                  Repeat this process for the other delays (6 and 10).
