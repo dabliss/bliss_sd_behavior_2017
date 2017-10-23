@@ -1256,3 +1256,81 @@ def plot_running_avg_with_fit(df, f_name, bin_width=350, bin_step=10,
 
     plt.savefig('running_avg_%s.png' % f_name, bbox_inches='tight')
         
+
+def plot_ploner_fig_3(df):
+
+    """Plot adjusted Figure 3 from Ploner et al., '98, Eur J Neurosci.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+      One data frame for all subjects.
+
+    Notes
+    -----
+    Note that in Ploner et al., the dependent variable is the ratio of
+    saccade amplitude to target eccentricity.  All stimuli were
+    presented on the horizontal axis.  My dependent variable here is
+    orthogonal to saccade amplitude; it is the error in the angle along
+    the circle on which the stimuli were presented in degrees.  (No
+    error for Ploner et al. results in a dependent variable value of 1;
+    no error for me results in a dependent variable value of 0.)
+
+    """
+
+    delays = [0, 1, 3, 6, 10]
+
+    # Compute the variance for each delay.
+    variance = np.empty(len(delays))
+    ci_low = np.empty_like(variance)
+    ci_high = np.empty_like(variance)
+    for i, d in enumerate(delays):
+        # Pull out the errors.
+        errors = df.loc[df.delays == d, 'errors']
+        errors = errors[~np.isnan(errors)]
+        # Convert to a numpy array.
+        errors = np.array(errors)
+        # Now compute the variance.
+        variance[i] = errors.var()
+
+        # Compute the bootstrapped variance.
+        bootstrapped_variance = np.empty(10000)
+        for j in range(len(bootstrapped_variance)):
+            ind = np.random.choice(np.arange(len(errors)), len(errors))
+            bootstrapped_variance[j] = errors[ind].var()
+
+        # Compute the bootstrapped CIs.
+        delta_star = np.sort(bootstrapped_variance - variance[i])
+        delta_star_25 = delta_star[int(97.5 / 100 * 10000)]
+        delta_star_975 = delta_star[int(2.5 / 100 * 10000)]
+        ci_low[i] = variance[i] - delta_star_25
+        ci_high[i] = variance[i] - delta_star_975
+
+    # Fit a line to the variance.
+    m, b = np.polyfit(delays, variance, 1)
+
+    # Fit a power law to the variance.
+    alpha, inner_add, beta = fit_power_law(delays, variance)
+    print alpha, inner_add, beta
+
+    # Plot the figure.
+    plt.plot(delays, variance, 'k', linewidth=1)
+    plt.plot(delays, m * np.array(delays) + b, 'k', linewidth=2)
+    # Plot the power law.
+    many_delays = np.linspace(0, 10, 1000)
+    plt.plot(many_delays, alpha * (many_delays + inner_add) ** beta,
+             'orange', linewidth=2)
+    print ci_low
+    print ci_high
+    plt.fill_between(delays, ci_low, ci_high, alpha=0.25, color='k')
+
+    # Format the figure.
+    plt.xlim(-0.5, 10.5)
+    plt.xlabel("Current trial's delay (s)", fontsize=24)
+    plt.gca().set_xticks(delays)
+    plt.gca().set_xticklabels(np.array(plt.gca().get_xticks(), dtype=int),
+                              fontsize=18)
+    plt.gca().set_yticklabels(plt.gca().get_yticks(), fontsize=18)
+    plt.gca().set_ylabel('Variance ($^{\circ^2}$)', fontsize=24)
+    plt.tight_layout()
+    plt.savefig('ploner_replication.png', bbox_inches='tight')
