@@ -986,3 +986,168 @@ def perform_permutation_test_conditions(data_frames, labels, previous=False,
                              float(n_permutations)
         print '10 > 6:', p
     
+
+def plot_bars(data_frames, labels, previous=False, use_clifford=True,
+              ylim=None, f_name=None):
+
+    results_dir = utils._get_results_dir('fig_1', 'bliss_behavior')
+    n_subs = len(labels)
+    delays = np.array([0.0, 1.0, 3.0, 6.0, 10.0])
+    n_delays = len(delays)
+    
+    # Initialize the array for bar heights.
+    delay_actual_p2p = np.empty(n_delays)
+
+    # Initialize the arrays for concatenated diff and error.
+    concat_diff_rad = [np.array([])] * n_delays
+    concat_error_rad = [np.array([])] * n_delays
+
+    # Initialize the arrays for the confidence intervals.
+    ci_low = np.empty_like(delay_actual_p2p)
+    ci_high = np.empty_like(delay_actual_p2p)
+
+    for i, lab in enumerate(labels):
+
+        df = data_frames[i]
+        if not previous:
+            # For each delay, make arrays that collapse over
+            # subjects for d_stim and error.
+            for j, d in enumerate(delays):
+                diff = np.array(df.loc[df.delays == d, 'd_stim'])
+                ind = ~np.isnan(diff)
+                diff_rad = np.deg2rad(diff[ind])
+                concat_diff_rad[j] = np.concatenate([concat_diff_rad[j],
+                                                     diff_rad])
+                error = np.array(df.loc[df.delays == d,
+                                        'global_resid_error'])
+                error_rad = np.deg2rad(error[ind])
+                concat_error_rad[j] = np.concatenate([concat_error_rad[j],
+                                                      error_rad])
+        else:
+            for j, d in enumerate(delays):
+                diff = np.array(df.loc[df.prev_delay == d, 'd_stim'])
+                ind = ~np.isnan(diff)
+                diff_rad = np.deg2rad(diff[ind])
+                concat_diff_rad[j] = np.concatenate([concat_diff_rad[j],
+                                                     diff_rad])
+                error = np.array(df.loc[df.prev_delay == d,
+                                        'global_resid_error'])
+                error_rad = np.deg2rad(error[ind])
+                concat_error_rad[j] = np.concatenate([concat_error_rad[j],
+                                                      error_rad])
+
+    # For each delay, do the Clifford fit.
+    theta = np.linspace(-np.pi, np.pi, 1000)
+    for j in range(n_delays):
+        if use_clifford:
+            c, s, m, _ = fit_clifford(concat_error_rad[j], concat_diff_rad[j])
+            fit = m * clifford(theta, c, s)
+            delay_actual_p2p[j] = m * (fit.max() - fit.min())
+        else:
+            a, w, _ = fit_dog(concat_error_rad[j], concat_diff_rad[j])
+            fit = dog(theta, a, w)
+            delay_actual_p2p[j] = np.sign(a) * (fit.max() - fit.min())
+
+    # Load the bootstrapping results and compute confidence intervals.
+    sub_string = '_'.join('%03d' % (lab,) for lab in labels)
+    n_permutations = 10000
+    for j, d in enumerate(delays):
+        if not previous:
+            if j == 0:
+                if use_clifford:
+                    boot_res = np.loadtxt(os.path.join(
+                            results_dir,
+                            'bootstrap_clifford_perception_s%s.txt' %
+                            sub_string))
+                else:
+                    boot_res = np.loadtxt(os.path.join(
+                            results_dir,
+                            'bootstrap_dog_perception_s%s.txt' %
+                            sub_string))
+            else:
+                if use_clifford:
+                    boot_res = np.loadtxt(os.path.join(
+                            results_dir,
+                            'bootstrap_clifford_d%02d_s%s.txt' %
+                            (d, sub_string)))
+                else:
+                    boot_res = np.loadtxt(os.path.join(
+                            results_dir,
+                            'bootstrap_dog_d%02d_s%s.txt' %
+                            (d, sub_string)))
+        else:
+            if use_clifford:
+                boot_res = np.loadtxt(os.path.join(
+                        results_dir,
+                        'bootstrap_clifford_d%02d_previous_s%s.txt'
+                        % (d, sub_string)))
+            else:
+                boot_res = np.loadtxt(os.path.join(
+                        results_dir,
+                        'bootstrap_dog_d%02d_previous_s%s.txt'
+                        % (d, sub_string)))
+        try:
+            assert boot_res.shape[0] == n_permutations
+        except AssertionError:
+            raise AssertionError('wrong number bootstraps for %d' % d)
+        c_permuted = boot_res[:, 0]
+        s_permuted = boot_res[:, 1]
+        if use_clifford:
+            m_permuted = boot_res[:, 2]
+        c_star = np.empty(n_permutations)
+        for i in range(n_permutations):
+            if use_clifford:
+                fit = m_permuted[i] * clifford(theta, c_permuted[i],
+                                               s_permuted[i])
+                peak_to_peak = m_permuted[i] * (fit.max() - fit.min())
+            else:
+                fit = dog(theta, c_permuted[i], s_permuted[i])
+                peak_to_peak = np.sign(c_permuted[i]) * (fit.max() - fit.min())
+            c_star[i] = peak_to_peak
+        # Compute the confidence interval.
+        delta_star = np.sort(c_star - delay_actual_p2p[j])
+        delta_star_25 = delta_star[int(97.5 / 100 * n_permutations)]
+        delta_star_975 = delta_star[int(2.5 / 100 * n_permutations)]
+        ci_low[j] = delay_actual_p2p[j] - delta_star_25
+        ci_high[j] = delay_actual_p2p[j] - delta_star_975
+
+    f, ax_arr = plt.subplots(1, 1, figsize=(8.2225, 5.5))
+    width = 0.6
+
+    plt.axhline(0, color='k', linestyle='--', linewidth=1)
+    print np.rad2deg(delay_actual_p2p)
+    ci_low = np.rad2deg(ci_low)
+    ci_high = np.rad2deg(ci_high)
+    delay_actual_p2p = np.rad2deg(delay_actual_p2p)
+    print ci_low
+    print ci_high
+    plt.bar(delays - 0.4, delay_actual_p2p,
+            yerr=(delay_actual_p2p - ci_low,
+                  ci_high - delay_actual_p2p),
+            ecolor='k', color='gray', error_kw={'linewidth': 2,
+                                                'capthick': 2})
+
+    plt.xlim(-0.9, 10.9)
+    if ylim is not None:
+        plt.ylim(*ylim)
+    plt.gca().set_xticks(delays)
+    plt.gca().set_xticklabels(np.array(plt.gca().get_xticks(), dtype=int),
+                              fontsize=18)
+    plt.gca().set_yticklabels(plt.gca().get_yticks(), fontsize=18)
+    if not previous:
+        plt.xlabel("Length of current trial's delay period (s)", fontsize=24)
+    else:
+        plt.xlabel("Previous trial's delay (s)", fontsize=24)
+    plt.ylabel('Serial dependence ($^\circ$)', fontsize=24)
+
+    plt.tight_layout()
+    if f_name is not None:
+        plt.savefig('plot_bars_%s.png' % f_name, bbox_inches='tight')
+        return
+    if previous and not use_clifford:
+        plt.savefig('plot_bars_previous_dog.png', bbox_inches='tight')
+    if not previous:
+        plt.savefig('plot_bars_wm.png', bbox_inches='tight')
+    else:
+        plt.savefig('plot_bars_previous.png', bbox_inches='tight')
+        
