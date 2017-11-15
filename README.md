@@ -73,3 +73,22 @@ Please send bug reports and questions to dpb6@nyu.edu.
                   immediately below STOP POINT 9 in the notebook.
 
                   Repeat this process for scripts/bootstrap_clifford_all.py.
+
+    Stop Point 10: Run scripts/perform_permutation_test_dog_past_delay.py 1,000
+                   times (--k 1 to --k 1000).
+
+                   Update the value of only_delay in
+                   perform_permutation_test_dog_past_delay.py to be 1.  Then
+                   rerun it 1,000 times.
+
+                   Repeat this process for the other delays (3, 6, and 10).
+
+                   Run scripts/perform_permutation_test_clifford_past_delay.py
+                   1,000 times (--k 1 to --k 1000).
+
+                   Update the value of only_delay in
+                   perform_permutation_test_clifford_past_delay.py to be 1.
+                   Then rerun it 1,000 times.
+
+                   Repeat this process for the other delays (3, 6, and 10).
+                   
