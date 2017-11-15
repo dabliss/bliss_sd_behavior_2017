@@ -8,6 +8,11 @@ import matlab.engine
 from scipy.optimize import least_squares
 
 
+MODELS = np.array(('VMRW', 'VM', 'VP', 'VMRW+attraction', 'VMRW+swap',
+                   'VM_attraction', 'VP_attraction', 'VMRW_dog', 'EP_dog',
+                   'VP_dog'))
+
+
 def get_subject_data(subject, sessions, task, keys, indices,
                      n_trials_per_session):
 
@@ -1465,3 +1470,255 @@ def plot_indiv_subs(data_frames, labels, models, supp=False):
     else:
         plt.savefig('indiv_subs_supp.png', bbox_inches='tight')
     
+
+def save_for_matlab(data_frames, labels):
+    """Save the data for model fitting in Matlab.
+
+    Parameters
+    ----------
+    data_frames : tuple
+      One data frame for each subject.
+
+    """
+    package_dir = '/home/despo/dbliss/dopa_net/'
+    data_dir = package_dir + 'behavioral_experiments/psychtoolbox/data/'
+    for lab, df in zip(labels, data_frames):
+        for d in sorted(df.delays.unique()):
+            mat_name = 's%03d_%02d' % (lab, d)
+            d_stim_name = mat_name + '_d_stim'
+            data = np.deg2rad(np.array(df.loc[df.delays == d, 'errors']))
+            d_stim = np.deg2rad(np.array(df.loc[df.delays == d, 'd_stim']))
+            # Set d_stim for first trial from each session to 0.
+            d_stim[np.isnan(d_stim)] = 0
+            sio.savemat(data_dir + '%s.mat' % mat_name, {mat_name: data})
+            sio.savemat(data_dir + '%s.mat' % d_stim_name,
+                        {d_stim_name: d_stim})
+        
+
+def load_all_fits(labels):
+    """Load fits for all models.
+
+    Returns
+    -------
+    all_fits : list
+      All the fits.
+
+    """
+    models = ('bays_no_mu', 'EPA_no_mu', 'VPA_no_mu', 'VMRW_attraction',
+              'VMRW_swap', 'EP_H_NM', 'VP_H_NM', 'VMRW_dog', 'EP_dog_NM',
+              'VP_dog_NM')
+    all_fits = []
+    for mod in models:
+        all_fits.append(load_fits(labels, mod))
+    return all_fits
+            
+
+def load_fits(subs, model):
+    """Load fits for a model.
+
+    Parameters
+    ----------
+    subs : sequence
+      Subject labels.
+
+    model : string
+      'bays', 'bays_with_guessing', 'bays_with_history', 'bays_GH',
+      'EPA', 'EP_with_guessing', 'EP_with_history', 'EP_GH', 'VPA',
+      'VP_with_guessing', 'VP_with_history', or 'VP_GH'.
+
+    Returns
+    -------
+    fit_dict : dictionary
+      Dictionary with fits.
+
+    """
+    package_dir = '/home/despo/dbliss/dopa_net/'
+    data_dir = package_dir + 'behavioral_experiments/psychtoolbox/data/'
+    delays = [0, 1, 3, 6, 10]
+    fit_dict = {}
+    # Determine whether this model has any fixed parameters.
+    no_fixed = (model.endswith('no_mu') or model.endswith('swap') or
+                model == 'VMRW_attraction' or 'H_NM' in model or
+                'dog' in model)
+    for lab in subs:
+        for d in delays:
+            if no_fixed:
+                key = '%03d_%02d' % (lab, d)
+            else:
+                key = '%03d' % (lab,)
+            fit_dict[key] = {}
+            attempt = 1
+            while True:
+                if no_fixed:
+                    f_name = 's%03d_%02d_%s_%02d.mat' % (lab, d, model,
+                                                         attempt)
+                else:
+                    f_name = 's%03d_%s_%02d.mat' % (lab, model, attempt)
+                try:
+                    fit = sio.loadmat(data_dir + f_name)
+                except IOError:
+                    break
+                except TypeError:
+                    raise TypeError('%s is fucked up.' % f_name)
+                except:
+                    raise TypeError('%s is fucked up.' % f_name)
+                else:
+                    fit_dict[key][attempt] = fit
+                    attempt += 1
+            # Remove all but the best attempt here.  Note this assumes
+            # there is at least one attempt.
+            reduced_dict = {}
+            try:
+                reduced_dict[1] = fit_dict[key][get_best_attempt(fit_dict[key])]
+            except UnboundLocalError:
+                raise TypeError('No attempts for %s %s' % (key, model))
+            fit_dict[key] = reduced_dict
+            if not no_fixed:
+                break
+    return fit_dict
+
+
+def plot_model_fits(fits, labels, which_models=None, exclude_models=None,
+                    specifier=''):
+
+    """Plot average AICc for each model.
+
+    Parameters
+    ----------
+    fits : tuple
+      Tuple of fit dictionaries.
+
+    which_models : sequence (optional)
+      Which models to plot.
+
+    exclude_models : sequence (optional)
+      Which models not to plot.
+
+    specifier : string (optional)
+      Tack-on for the file name.
+
+    """
+
+    # Set n_models, fits, and models based on which subset is desired.
+    models = copy.deepcopy(MODELS)
+    if exclude_models is not None:
+        n_models = len(models) - len(exclude_models)
+        fits = copy.deepcopy(fits)
+        for mod in exclude_models:
+            i = np.where(models == mod)[0][0]
+            fits.pop(i)
+            models = np.delete(models, i)
+    elif which_models is not None:
+        n_models = len(which_models)
+        sub_fits = []
+        sub_models = []
+        for mod in which_models:
+            i = np.where(models == mod)[0][0]
+            sub_fits.append(fits[i])
+            sub_models.append(models[i])
+        fits = sub_fits
+        models = np.array(sub_models)
+    else:
+        n_models = len(fits)
+
+    # For each subject and model, compute an AICc value.
+    n_subs = len(labels)
+    aic_c_values = np.empty((n_models, n_subs))
+    total_n = 1000.0  # Ugly hard-coding.
+    for j, model in enumerate(fits):
+        # Determine whether fit is hierarchical.
+        datasets = sorted(model)
+        try:
+            s, d = datasets[0].split('_')
+        except ValueError:
+            hierarchical_fit = True
+        else:
+            hierarchical_fit = False
+        # Get log likelihood for each subject.
+        log_likes = np.zeros(n_subs)
+        for dset in datasets:
+            try:
+                best_attempt = get_best_attempt(model[dset])
+            except UnboundLocalError:
+                # There are no attempts for this dataset.
+                raise ValueError('%s, %s has no attempts' % (models[j], dset))
+            fit_details = model[dset][best_attempt]
+            if hierarchical_fit:
+                i_sub = labels.index(int(dset))
+                log_likes[i_sub] += fit_details['log_like'][0][0]
+                total_k = len(fit_details['params_hat'][0])
+            else:
+                aic = fit_details['aic'][0][0]
+                k = len(fit_details['params_hat'][0])
+                s = dset.split('_')[0]
+                i_sub = labels.index(int(s))
+                log_likes[i_sub] += k - aic / 2
+                total_k = k * 5
+
+        # Compute the AICc from the log likelihood for each subject.
+        aic_values = 2 * total_k - 2 * log_likes
+        correction = 2 * total_k * (total_k + 1) / (total_n - total_k - 1)
+        aic_c_values[j, :] = aic_values + correction
+
+    # Redefine aic_c_values to be relative to value for VM.
+#    try:
+#        aic_c_values -= aic_c_values[np.where(models == 'VM')[0][0]]
+#    except IndexError:
+#        try:
+#            aic_c_values -= aic_c_values[np.where(models == 'VMRW')[0][0]]
+#        except IndexError:
+#            aic_c_values -= aic_c_values[np.where(models == 'VM_attraction')[0][0]]
+
+    # Put the means in descending order.
+#    ind = aic_c_values.argsort()[::-1]
+
+    # Plot the figure.
+#    lefts = np.arange(n_models, dtype='float')
+#    width = 1.0
+    if exclude_models is not None:
+        print models[0], '-', models[2]
+        print (aic_c_values[0, :] - aic_c_values[2, :]).mean()
+        print (aic_c_values[0, :] - aic_c_values[2, :]).std() / np.sqrt(n_subs)
+        print
+        print models[2], '-', models[1]
+        print (aic_c_values[2, :] - aic_c_values[1, :]).mean()
+        print (aic_c_values[2, :] - aic_c_values[1, :]).std() / np.sqrt(n_subs)
+        print
+        print models[0], '-', models[1]
+        print (aic_c_values[0, :] - aic_c_values[1, :]).mean()
+        print (aic_c_values[0, :] - aic_c_values[1, :]).std() / np.sqrt(n_subs)
+    elif which_models[0] == 'VMRW':
+        print models[1], '-', models[0]
+        print (aic_c_values[1, :] - aic_c_values[0, :]).mean()
+        print (aic_c_values[1, :] - aic_c_values[0, :]).std() / np.sqrt(n_subs)
+        print
+        print models[2], '-', models[0]
+        print (aic_c_values[2, :] - aic_c_values[0, :]).mean()
+        print (aic_c_values[2, :] - aic_c_values[0, :]).std() / np.sqrt(n_subs)
+    else:
+        print models[1], '-', models[2]
+        print (aic_c_values[1, :] - aic_c_values[2, :]).mean()
+        print (aic_c_values[1, :] - aic_c_values[2, :]).std() / np.sqrt(n_subs)
+        print
+        print models[2], '-', models[0]
+        print (aic_c_values[2, :] - aic_c_values[0, :]).mean()
+        print (aic_c_values[2, :] - aic_c_values[0, :]).std() / np.sqrt(n_subs)
+#    print aic_c_values[ind]
+#    barlist = plt.barh(lefts, aic_c_values[ind], width, ecolor='k',
+#                       color='gray')
+#    plt.yticks(lefts + width / 2)
+#    plt.gca().set_yticklabels([m.replace('_', '+') for m in models[ind]],
+#                              fontsize=18)
+#    if which_models is None:
+#        plt.xlabel('$\Delta$AICc from VM', fontsize=24)
+#    elif 'VP_attraction' not in which_models:
+#        plt.xlabel('$\Delta$AICc from VMRW', fontsize=24)
+#    else:
+#        plt.xlabel('$\Delta$AICc from VM+attraction', fontsize=24)
+#    plt.gca().set_xticklabels(np.array(plt.gca().get_xticks(), dtype=int),
+#                              fontsize=18)
+#    y_lim = plt.ylim()
+#    plt.ylim(y_lim[0] - 0.25, y_lim[1] + 0.25)
+#    plt.axvline(0, color='k', linewidth=1)
+#    plt.tight_layout()
+#    plt.savefig('plot_model_fits%s.png' % (specifier,), bbox_inches='tight')

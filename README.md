@@ -108,3 +108,24 @@ Please send bug reports and questions to dpb6@nyu.edu.
                    times.
 
                    Repeat this process for the other delays (3, 6, and 10).
+
+    Stop Point 12: Run the following Matlab scripts (in the matlab folder) for
+                   all subjects and delays:
+
+                   save_EPA_fits_no_mu.m
+                   save_VPA_fits_no_mu.m
+                   save_bays_fits_no_mu.m
+                   save_VMRW_dog_fits.m
+                   save_VMRW_swap_fits.m
+                   save_EP_dog_NM_fits.m
+                   save_VP_dog_NM_fits.m
+
+                   Each of these scripts takes a single argument (k) that
+                   uniquely specifies a subject/delay combination.  This k
+                   value is computed as follows:
+
+                   k = (n - 1) * 5 + d,
+
+                   where n is the subject number and d is the delay number
+                   between 1 and 5 (0 s = 1, 1 s = 2, 3 s = 3, 6 s = 4, 10 s =
+                   5).
