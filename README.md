@@ -2,7 +2,9 @@
 
 Code needed to reproduce the analysis of behavioral data in Bliss et al., 2017.
 
-Please send bug reports and questions to dpb6@nyu.edu.
+For access to the data, please contact Dan Bliss at dpb6@nyu.edu.
+
+Please send bug reports and any questions to dpb6@nyu.edu as well.
 
 ## Recipe
 
