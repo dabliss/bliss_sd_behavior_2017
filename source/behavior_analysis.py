@@ -14,7 +14,7 @@ MODELS = np.array(('VMRW', 'VM', 'VP', 'VMRW+attraction', 'VMRW+swap',
 
 
 def get_subject_data(subject, sessions, task, keys, indices,
-                     n_trials_per_session):
+                     n_trials_per_session, data_dir):
 
     """Load a subject's data.
 
@@ -46,11 +46,12 @@ def get_subject_data(subject, sessions, task, keys, indices,
     
     """
 
-    data_dir = '/home/despo/dbliss/dopa_net/behavioral_experiments/psychtoolbox/%s/data/' % task
+    data_dir = os.path.join(data_dir, 'data', task)
 
     # Load the response data for the subject.
     for session in sessions:
-        results_file = '%s%03d_%03d_results.txt' % (data_dir, subject, session)
+        results_file = os.path.join(data_dir, '%03d_%03d_results.txt' %
+                                    (subject, session))
         exec 'session_%03d = pd.read_csv("%s", sep="\t")' % (session,
                                                              results_file)
     all_sessions_response = pd.concat([eval('session_%03d' % session) for
@@ -59,8 +60,8 @@ def get_subject_data(subject, sessions, task, keys, indices,
 
     # Load the presentation data for the subject.
     for session in sessions:
-        session_file = '%ssession_details_%03d_%03d.mat' % (data_dir, subject,
-                                                            session)
+        session_file = os.path.join(data_dir, 'session_details_%03d_%03d.mat'
+                                    % (subject, session))
         exec 'session_%03d = sio.loadmat("%s")' % (session, session_file)
         session_slice = 'session_%03d["session_details"][0, :]' % session
         data_dict = {}
@@ -362,8 +363,9 @@ def print_fit_goodness(data_frames):
     print (aic_c_values[0, :] - aic_c_values[1, :]).std() / np.sqrt(n_subs)
 
 
-def save_for_permutation(data_frames, sub_nums, task_name='', perception=False,
-                         only_delay=None, previous=False, future=False):
+def save_for_permutation(data_frames, sub_nums, package_dir, task_name='',
+                         perception=False, only_delay=None, previous=False,
+                         future=False):
 
     """Save d_stim and global_resid_error for permutation tests.
 
@@ -374,6 +376,9 @@ def save_for_permutation(data_frames, sub_nums, task_name='', perception=False,
 
     sub_nums : tuple
       Subject numbers
+
+    package_dir : string
+      Top-level directory for the project.
 
     task_name : string (optional)
       Specifier for the task.
@@ -394,8 +399,11 @@ def save_for_permutation(data_frames, sub_nums, task_name='', perception=False,
 
     """
     
-    package_dir = '/home/despo/dbliss/dopa_net/'
-    data_dir = package_dir + 'behavioral_experiments/psychtoolbox/data/'
+    data_dir = os.path.join(package_dir, 'proc_data', task_name)
+    try:
+        os.makedirs(data_dir)
+    except OSError:
+        pass
 
     if perception:
         per_string = '_perception'
@@ -403,28 +411,28 @@ def save_for_permutation(data_frames, sub_nums, task_name='', perception=False,
         per_string = ''
 
     for i, (df, sub) in enumerate(zip(data_frames, sub_nums)):
-        f_name = data_dir + 's%03d' % sub
+        f_name = os.path.join(data_dir, 's%03d' % sub)
 
         # Get d_stim_name.
         if not previous:
             try:
-                d_stim_name = f_name + '_d_stim%s%s%02d.npy' % (task_name,
-                                                                per_string,
-                                                                only_delay)
+                d_stim_name = f_name + '_d_stim_%s%s%02d.npy' % (task_name,
+                                                                 per_string,
+                                                                 only_delay)
             except TypeError:
                 if perception:
-                    d_stim_name = f_name + '_d_stim%s%s.npy' % (task_name,
-                                                                per_string)
+                    d_stim_name = f_name + '_d_stim_%s%s.npy' % (task_name,
+                                                                 per_string)
                 else:
                     if not future:
-                        d_stim_name = f_name + '_d_stim%s_all_delays.npy' % (
+                        d_stim_name = f_name + '_d_stim_%s_all_delays.npy' % (
                             task_name,)
                     else:
                         d_stim_name = (f_name +
-                                       '_d_stim%s_all_delays_future.npy' % (
+                                       '_d_stim_%s_all_delays_future.npy' % (
                                 task_name,))
         else:
-            d_stim_name = f_name + '_d_stim%s%s%02d_previous.npy' % (
+            d_stim_name = f_name + '_d_stim_%s%s%02d_previous.npy' % (
                 task_name, per_string, only_delay)
 
         # Get d_stim.
@@ -446,22 +454,22 @@ def save_for_permutation(data_frames, sub_nums, task_name='', perception=False,
         # Get error_name.
         if not previous:
             try:
-                error_name = (f_name + '_global_resid_error%s%s%02d.npy' % (
+                error_name = (f_name + '_global_resid_error_%s%s%02d.npy' % (
                     task_name, per_string, only_delay))
             except TypeError:
                 if perception:
-                    error_name = (f_name + '_global_resid_error%s%s.npy' % (
+                    error_name = (f_name + '_global_resid_error_%s%s.npy' % (
                         task_name, per_string))
                 else:
                     if not future:
                         error_name = (f_name + '_global_resid_error' +
-                                      '%s_all_delays.npy' % (task_name,))
+                                      '_%s_all_delays.npy' % (task_name,))
                     else:
                         error_name = (f_name + '_global_resid_error' +
-                                      '%s_all_delays_future.npy' %
+                                      '_%s_all_delays_future.npy' %
                                       (task_name,))
         else:
-            error_name = (f_name + '_global_resid_error%s%s%02d_previous.npy' %
+            error_name = (f_name + '_global_resid_error_%s%s%02d_previous.npy' %
                           (task_name, per_string, only_delay))
 
         # Get error.
