@@ -416,9 +416,9 @@ def save_for_permutation(data_frames, sub_nums, package_dir, task_name='',
         # Get d_stim_name.
         if not previous:
             try:
-                d_stim_name = f_name + '_d_stim_%s%s%02d.npy' % (task_name,
-                                                                 per_string,
-                                                                 only_delay)
+                d_stim_name = f_name + '_d_stim_%s%s_%02d.npy' % (task_name,
+                                                                  per_string,
+                                                                  only_delay)
             except TypeError:
                 if perception:
                     d_stim_name = f_name + '_d_stim_%s%s.npy' % (task_name,
@@ -432,7 +432,7 @@ def save_for_permutation(data_frames, sub_nums, package_dir, task_name='',
                                        '_d_stim_%s_all_delays_future.npy' % (
                                 task_name,))
         else:
-            d_stim_name = f_name + '_d_stim_%s%s%02d_previous.npy' % (
+            d_stim_name = f_name + '_d_stim_%s%s_%02d_previous.npy' % (
                 task_name, per_string, only_delay)
 
         # Get d_stim.
@@ -454,7 +454,7 @@ def save_for_permutation(data_frames, sub_nums, package_dir, task_name='',
         # Get error_name.
         if not previous:
             try:
-                error_name = (f_name + '_global_resid_error_%s%s%02d.npy' % (
+                error_name = (f_name + '_global_resid_error_%s%s_%02d.npy' % (
                     task_name, per_string, only_delay))
             except TypeError:
                 if perception:
@@ -469,8 +469,8 @@ def save_for_permutation(data_frames, sub_nums, package_dir, task_name='',
                                       '_%s_all_delays_future.npy' %
                                       (task_name,))
         else:
-            error_name = (f_name + '_global_resid_error_%s%s%02d_previous.npy' %
-                          (task_name, per_string, only_delay))
+            error_name = (f_name + '_global_resid_error_%s%s_%02d_previous.npy'
+                          % (task_name, per_string, only_delay))
 
         # Get error.
         if not previous:
