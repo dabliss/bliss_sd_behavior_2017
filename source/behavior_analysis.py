@@ -490,7 +490,7 @@ def save_for_permutation(data_frames, sub_nums, package_dir, task_name='',
         np.save(error_name, error_rad)
     
 
-def perform_permutation_test(data_frames, labels, concat=False,
+def perform_permutation_test(data_frames, labels, package_dir, concat=False,
                              use_clifford=False, future=False, task_name='',
                              two_tailed=False):
 
@@ -503,6 +503,9 @@ def perform_permutation_test(data_frames, labels, concat=False,
 
     labels : tuple
       Label for each data frame (subject number, an integer).
+
+    package_dir : string
+      Top-level directory for the project.
 
     concat : boolean (optional)
       Whether or not to concatenate the data frames into a super
@@ -522,7 +525,7 @@ def perform_permutation_test(data_frames, labels, concat=False,
 
     """
 
-    results_dir = '/home/despo/dbliss/dopa_net/results/bliss_behavior/fig_1/'
+    results_dir = os.path.join(package_dir, 'results', task_name)
 
     if concat:
         diff_rad = np.array([])
@@ -564,7 +567,7 @@ def perform_permutation_test(data_frames, labels, concat=False,
                 perm_res = np.loadtxt(os.path.join(
                         results_dir,
                         'permutations_dog_all_delays_' +
-                        's%03d%s.txt' % (lab, task_name)))
+                        's%03d_%s.txt' % (lab, task_name)))
                 assert perm_res.shape[0] == 10000
                 a_permuted = perm_res[:, 0]
                 w_permuted = perm_res[:, 1]
@@ -643,7 +646,7 @@ def perform_permutation_test(data_frames, labels, concat=False,
         if not future:
             perm_res = np.loadtxt(os.path.join(results_dir,
                                                'permutations_dog_all_delays' +
-                                               '_s%s%s.txt'
+                                               '_s%s_%s.txt'
                                                % (sub_string, task_name)))
         else:
             perm_res = np.loadtxt(os.path.join(
