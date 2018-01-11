@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     # Write to the file.
     flags = os.O_CREAT | os.O_WRONLY
-    results_dir = os.path.join(package_dir, 'results')
+    results_dir = os.path.join(package_dir, 'results', task_name)
     try:
         os.makedirs(results_dir)
     except OSError:
