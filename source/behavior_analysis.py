@@ -518,7 +518,7 @@ def perform_permutation_test(data_frames, labels, package_dir, concat=False,
       Whether or not to use future_d_stim as d_stim.
 
     task_name : string (optional)
-      '' (default) or 'var_ITI'.
+      Specifier for the task.
 
     two_tailed : boolean (optional)
       Whether to do two-tailed test.
@@ -745,8 +745,9 @@ def print_confidence_interval(data_frames, labels, package_dir, future=False,
     print np.rad2deg(ci_low), np.rad2deg(ci_high)
 
 
-def perform_permutation_test_conditions(data_frames, labels, previous=False,
-                                        use_clifford=True):
+def perform_permutation_test_conditions(data_frames, labels, package_dir,
+                                        previous=False, use_clifford=True,
+                                        task_name=''):
     
     """Compute p-values for different delay/ITI conditions.
 
@@ -758,12 +759,18 @@ def perform_permutation_test_conditions(data_frames, labels, previous=False,
     labels : tuple
       Label for each data frame (subject number, an integer).
 
+    package_dir : string
+      Top-level directory for the project.
+
     previous : boolean (optional)
       Whether or not to use the previous trial's delay.
 
+    task_name : string (optional)
+      Specifier for the task.
+
     """
     
-    results_dir = utils._get_results_dir('fig_1', 'bliss_behavior')
+    results_dir = os.path.join(package_dir, 'results', task_name)
     delays = np.array([0.0, 1.0, 3.0, 6.0, 10.0])
     n_delays = len(delays)
     n_permutations = 10000
@@ -811,24 +818,24 @@ def perform_permutation_test_conditions(data_frames, labels, previous=False,
                 if use_clifford:
                     perm_res = np.loadtxt(os.path.join(
                             results_dir,
-                            'permutations_clifford_perception_s%s.txt'
-                            % sub_string))
+                            'permutations_clifford_perception_s%s_%s.txt'
+                            % (sub_string, task_name)))
                 else:
                     perm_res = np.loadtxt(os.path.join(
                             results_dir,
-                            'permutations_dog_perception_s%s.txt'
-                            % sub_string))
+                            'permutations_dog_perception_s%s_%s.txt'
+                            % (sub_string, task_name)))
             else:
                 if use_clifford:
                     perm_res = np.loadtxt(os.path.join(
                             results_dir,
-                            'permutations_clifford_d%02d_s%s.txt'
-                            % (d, sub_string)))
+                            'permutations_clifford_d%02d_s%s_%s.txt'
+                            % (d, sub_string, task_name)))
                 else:
                     perm_res = np.loadtxt(os.path.join(
                             results_dir,
-                            'permutations_dog_d%02d_s%s.txt'
-                            % (d, sub_string)))
+                            'permutations_dog_d%02d_s%s_%s.txt'
+                            % (d, sub_string, task_name)))
         else:
             if use_clifford:
                 perm_res = np.loadtxt(os.path.join(
