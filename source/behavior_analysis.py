@@ -577,7 +577,7 @@ def perform_permutation_test(data_frames, labels, package_dir, concat=False,
                 perm_res = np.loadtxt(os.path.join(
                         results_dir,
                         'permutations_clifford_all_delays_' +
-                        's%03d%s.txt' % (lab, task_name)))
+                        's%03d_%s.txt' % (lab, task_name)))
                 assert perm_res.shape[0] == 10000
                 c_permuted = perm_res[:, 0]
                 s_permuted = perm_res[:, 1]
@@ -651,7 +651,7 @@ def perform_permutation_test(data_frames, labels, package_dir, concat=False,
         else:
             perm_res = np.loadtxt(os.path.join(
                     results_dir, 'permutations_dog_all_delays_future_'
-                    + 's%s%s.txt' % (sub_string, task_name)))
+                    + 's%s_%s.txt' % (sub_string, task_name)))
 
         n_permutations = perm_res.shape[0]
         assert n_permutations == 10000
