@@ -689,9 +689,10 @@ def perform_permutation_test(data_frames, labels, package_dir, concat=False,
         print 'p-value:', c_p, 'p2p:', np.rad2deg(p2p_actual)
 
 
-def print_confidence_interval(data_frames, labels, future=False, task_name=''):
+def print_confidence_interval(data_frames, labels, package_dir, future=False,
+                              task_name=''):
     
-    results_dir = '/home/despo/dbliss/dopa_net/results/bliss_behavior/fig_1/'
+    results_dir = os.path.join(package_dir, 'results', task_name)
     sub_string = '_'.join('%03d' % (lab,) for lab in labels)
     
     concat_diff_rad = np.array([])
@@ -718,11 +719,11 @@ def print_confidence_interval(data_frames, labels, future=False, task_name=''):
 
     if not future:
         boot_res = np.loadtxt(os.path.join(results_dir,
-                                           'bootstrap_dog_all_delays_s%s%s.txt'
+                                           'bootstrap_dog_all_delays_s%s_%s.txt'
                                            % (sub_string, task_name)))
     else:
         boot_res = np.loadtxt(os.path.join(
-                results_dir, 'bootstrap_dog_all_delays_future_s%s%s.txt' %
+                results_dir, 'bootstrap_dog_all_delays_future_s%s_%s.txt' %
                 (sub_string, task_name)))
 
     n_permutations = 10000
