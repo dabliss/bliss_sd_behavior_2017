@@ -5,12 +5,6 @@ import sys
 
 import numpy as np
 
-module_path = os.path.abspath(os.path.join('..'))
-if module_path not in sys.path:
-    sys.path.append(module_path)
-
-from source import behavior_analysis as ba
-
 
 if __name__ == '__main__':
 
@@ -28,6 +22,11 @@ if __name__ == '__main__':
     only_delay = 1
 
     package_dir = pa.dir
+
+    if package_dir not in sys.path:
+        sys.path.append(package_dir)
+    from source import behavior_analysis as ba
+
     data_dir = os.path.join(package_dir, 'proc_data', task_name)
 
     n_permutations = 10
