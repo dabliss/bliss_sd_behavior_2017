@@ -6,6 +6,7 @@ from scipy import io as sio
 import matlab
 import matlab.engine
 from scipy.optimize import least_squares
+import matplotlib.pyplot as plt
 
 
 MODELS = np.array(('VMRW', 'VM', 'VP', 'VMRW+attraction', 'VMRW+swap',
@@ -1011,10 +1012,10 @@ def perform_permutation_test_conditions(data_frames, labels, package_dir,
         print '10 > 6:', p
     
 
-def plot_bars(data_frames, labels, previous=False, use_clifford=True,
-              ylim=None, f_name=None):
+def plot_bars(data_frames, labels, package_dir, previous=False,
+              use_clifford=True, ylim=None, f_name=None, task_name=''):
 
-    results_dir = utils._get_results_dir('fig_1', 'bliss_behavior')
+    results_dir = os.path.join(package_dir, 'results', task_name)
     n_subs = len(labels)
     delays = np.array([0.0, 1.0, 3.0, 6.0, 10.0])
     n_delays = len(delays)
@@ -1081,35 +1082,35 @@ def plot_bars(data_frames, labels, previous=False, use_clifford=True,
                 if use_clifford:
                     boot_res = np.loadtxt(os.path.join(
                             results_dir,
-                            'bootstrap_clifford_perception_s%s.txt' %
-                            sub_string))
+                            'bootstrap_clifford_perception_s%s_%s.txt' %
+                            (sub_string, task_name)))
                 else:
                     boot_res = np.loadtxt(os.path.join(
                             results_dir,
-                            'bootstrap_dog_perception_s%s.txt' %
-                            sub_string))
+                            'bootstrap_dog_perception_s%s_%s.txt' %
+                            (sub_string, task_name)))
             else:
                 if use_clifford:
                     boot_res = np.loadtxt(os.path.join(
                             results_dir,
-                            'bootstrap_clifford_d%02d_s%s.txt' %
-                            (d, sub_string)))
+                            'bootstrap_clifford_d%02d_s%s_%s.txt' %
+                            (d, sub_string, task_name)))
                 else:
                     boot_res = np.loadtxt(os.path.join(
                             results_dir,
-                            'bootstrap_dog_d%02d_s%s.txt' %
-                            (d, sub_string)))
+                            'bootstrap_dog_d%02d_s%s_%s.txt' %
+                            (d, sub_string, task_name)))
         else:
             if use_clifford:
                 boot_res = np.loadtxt(os.path.join(
                         results_dir,
-                        'bootstrap_clifford_d%02d_previous_s%s.txt'
-                        % (d, sub_string)))
+                        'bootstrap_clifford_d%02d_previous_s%s_%s.txt'
+                        % (d, sub_string, task_name)))
             else:
                 boot_res = np.loadtxt(os.path.join(
                         results_dir,
-                        'bootstrap_dog_d%02d_previous_s%s.txt'
-                        % (d, sub_string)))
+                        'bootstrap_dog_d%02d_previous_s%s_%s.txt'
+                        % (d, sub_string, task_name)))
         try:
             assert boot_res.shape[0] == n_permutations
         except AssertionError:
@@ -1145,11 +1146,13 @@ def plot_bars(data_frames, labels, previous=False, use_clifford=True,
     delay_actual_p2p = np.rad2deg(delay_actual_p2p)
     print ci_low
     print ci_high
-    plt.bar(delays - 0.4, delay_actual_p2p,
+    plt.bar(delays, delay_actual_p2p,
             yerr=(delay_actual_p2p - ci_low,
                   ci_high - delay_actual_p2p),
             ecolor='k', color='gray', error_kw={'linewidth': 2,
-                                                'capthick': 2})
+                                                'capthick': 2,
+                                                'capsize': 3}, align='center',
+            edgecolor='k')
 
     plt.xlim(-0.9, 10.9)
     if ylim is not None:
