@@ -7,6 +7,7 @@ import matlab
 import matlab.engine
 from scipy.optimize import least_squares
 import matplotlib.pyplot as plt
+from matplotlib import patches
 
 
 MODELS = np.array(('VMRW', 'VM', 'VP', 'VMRW+attraction', 'VMRW+swap',
@@ -1363,6 +1364,51 @@ def plot_ploner_fig_3(df):
     plt.savefig('ploner_replication.png', bbox_inches='tight')
 
 
+def fit_power_law(delay_values, param_values):
+    """Fit a power law relating delay to a parameter.
+
+    Parameters
+    ----------
+    delay_values : numpy.array
+      Delay for each parameter value.
+
+    param_values : numpy.array
+      Parameter values.
+    
+    Returns
+    -------
+    float
+      Additive factor for the fit.
+
+    float
+      Multiplicative factor for the fit.
+
+    float
+      Exponential factor for the fit.
+
+    """
+    def _solver(params):
+        m, c, lambda_ = params
+        return param_values - (m * (delay_values + c) ** lambda_)
+    min_cost = np.inf
+    for _ in range(100):
+        params_0 = [np.random.rand() * 100 - 50,
+                    np.random.rand(),
+                    np.random.rand() * 4 - 2]
+        try:
+            result = least_squares(_solver, params_0,
+                                   bounds=([-np.inf, -50, -25],
+                                           [np.inf, 50, 25]))
+        except ValueError:
+            continue
+        if result['cost'] < min_cost:
+            best_params, min_cost = result['x'], result['cost']
+    try:
+        return best_params
+    except UnboundLocalError:
+        return np.nan, np.nan, np.nan
+
+    
 def plot_indiv_subs(data_frames, labels, models, supp=False):
 
     results_dir = utils._get_results_dir('fig_1', 'bliss_behavior')
