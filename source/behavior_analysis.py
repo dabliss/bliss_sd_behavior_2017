@@ -1409,9 +1409,10 @@ def fit_power_law(delay_values, param_values):
         return np.nan, np.nan, np.nan
 
     
-def plot_indiv_subs(data_frames, labels, models, supp=False):
+def plot_indiv_subs(data_frames, labels, models, package_dir, supp=False,
+                    task_name=''):
 
-    results_dir = utils._get_results_dir('fig_1', 'bliss_behavior')
+    results_dir = os.path.join(package_dir, 'results', task_name)
 
     n_subs = len(data_frames)
     
@@ -1438,8 +1439,8 @@ def plot_indiv_subs(data_frames, labels, models, supp=False):
             p2p_values[i] = m * (fit.max() - fit.min())
 
         boot_res = np.loadtxt(os.path.join(
-                results_dir, 'bootstrap_%s_all_delays_s%03d.txt' % (mod,
-                                                                    lab)))
+                results_dir, 'bootstrap_%s_all_delays_s%03d_%s.txt' %
+                (mod, lab, task_name)))
         assert boot_res.shape[0] == n_permutations
         
         a_boot = boot_res[:, 0]
