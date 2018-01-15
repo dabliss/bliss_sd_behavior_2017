@@ -842,13 +842,13 @@ def perform_permutation_test_conditions(data_frames, labels, package_dir,
             if use_clifford:
                 perm_res = np.loadtxt(os.path.join(
                         results_dir,
-                        'permutations_clifford_d%02d_s%s_previous.txt'
-                        % (d, sub_string)))
+                        'permutations_clifford_d%02d_s%s_previous_%s.txt'
+                        % (d, sub_string, task_name)))
             else:
                 perm_res = np.loadtxt(os.path.join(
                         results_dir,
-                        'permutations_dog_d%02d_s%s_previous.txt'
-                        % (d, sub_string)))
+                        'permutations_dog_d%02d_s%s_previous_%s.txt'
+                        % (d, sub_string, task_name)))
 
         assert perm_res.shape[0] == n_permutations
         c_values[:, j] = perm_res[:, 0]
