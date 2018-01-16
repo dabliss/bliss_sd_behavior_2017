@@ -1540,7 +1540,7 @@ def plot_indiv_subs(data_frames, labels, models, package_dir, supp=False,
         plt.savefig('indiv_subs_supp.png', bbox_inches='tight')
     
 
-def save_for_matlab(data_frames, labels):
+def save_for_matlab(data_frames, labels, package_dir, task_name):
     """Save the data for model fitting in Matlab.
 
     Parameters
@@ -1548,9 +1548,17 @@ def save_for_matlab(data_frames, labels):
     data_frames : tuple
       One data frame for each subject.
 
+    labels : tuple
+      Label for each data frame (subject number, an integer).
+
+    package_dir : string
+      Top-level directory for the project.
+
+    task_name : string
+      Specifier for the task.
+      
     """
-    package_dir = '/home/despo/dbliss/dopa_net/'
-    data_dir = package_dir + 'behavioral_experiments/psychtoolbox/data/'
+    data_dir = os.path.join(package_dir, 'proc_data', task_name)
     for lab, df in zip(labels, data_frames):
         for d in sorted(df.delays.unique()):
             mat_name = 's%03d_%02d' % (lab, d)
@@ -1559,8 +1567,9 @@ def save_for_matlab(data_frames, labels):
             d_stim = np.deg2rad(np.array(df.loc[df.delays == d, 'd_stim']))
             # Set d_stim for first trial from each session to 0.
             d_stim[np.isnan(d_stim)] = 0
-            sio.savemat(data_dir + '%s.mat' % mat_name, {mat_name: data})
-            sio.savemat(data_dir + '%s.mat' % d_stim_name,
+            sio.savemat(os.path.join(data_dir, '%s.mat' % mat_name),
+                        {mat_name: data})
+            sio.savemat(os.path.join(data_dir, '%s.mat' % d_stim_name),
                         {d_stim_name: d_stim})
         
 
