@@ -33,7 +33,7 @@ function [params_hat, params_0, log_like] = fit_bays_no_mu(errors)
             return
         end
         
-        p_error = poissvmwalkpdf(errors, 0, kappa, xi);
+        p_error = JN14_pdf(errors, kappa, xi);
         
         % Set all p < 0.00001 to p = 0.00001 to avoid -Inf in the sum
         % below.

@@ -40,7 +40,7 @@ b = dog(d_stim, a, w);
 p = zeros(n_x, n_y);
 for trial_i = 1:n_x
     for trial_j = 1:n_y
-        p(trial_i, trial_j) = poissvmwalkpdf(x(trial_i, trial_j), ...
+        p(trial_i, trial_j) = JN14_pdf_mu(x(trial_i, trial_j), ...
             b(trial_i, trial_j), k, xi);
     end
 end

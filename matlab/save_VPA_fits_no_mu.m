@@ -1,10 +1,13 @@
-function save_VPA_fits_no_mu(k)
-% function save_VPA_fits(k)
+function save_VPA_fits_no_mu(project_dir, k)
+% function save_VPA_fits(project_dir, k)
 %
 % Parameters
 % ----------
 % k : integer
 %   Identifier for the dataset to use.
+%
+% project_dir : string
+%   Top-level directory for the repository.
 
 if k < 1 || rem(k, 1)
     error('Invalid value for k supplied.')
@@ -21,8 +24,8 @@ s = mod(floor((k - 1) / n_delays), n_subs) + 1;
 d = mod(k - 1, n_delays) + 1;
 
 % Load data for this subject and delay.
-data_dir = '~/dopa_net/behavioral_experiments/psychtoolbox/data/';
-load(strcat(data_dir, sprintf('s%03d_%02d.mat', s, delays(d))));
+data_dir = fullfile(project_dir, 'proc_data', 'exp1');
+load(fullfile(data_dir, sprintf('s%03d_%02d.mat', s, delays(d))));
 
 disp(strcat(['Loaded ', data_dir, sprintf('s%03d_%02d.mat', s, delays(d))]))
 
@@ -37,10 +40,11 @@ all_J = all_kappa .* besseli(1, all_kappa, 1) ./ besseli(0, all_kappa, 1);
 pdf = VPA(theta, 0, params_hat(1), params_hat(2), all_kappa, all_J);
 
 % Determine which attempt this is.
+results_dir = fullfile(project_dir, 'results', 'exp1');
 attempt = 1;
 while 1
     f_name = sprintf('s%03d_%02d_VPA_no_mu_%02d.mat', s, delays(d), attempt);  
-    full_f_name = strcat(data_dir, f_name);
+    full_f_name = fullfile(results_dir, f_name);
     if ~(exist(full_f_name, 'file') == 2)
         save(full_f_name, 'params_hat', 'theta', 'pdf', ...
             'params_0', 'aic', 'bic');

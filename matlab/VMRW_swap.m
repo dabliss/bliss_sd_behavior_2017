@@ -28,8 +28,8 @@ function p = VMRW_swap(x, mu, k, xi, p_mem, d_stim)
 p = zeros(n_x, n_y);
 for trial_i = 1:n_x
     for trial_j = 1:n_y
-        in_mind = p_mem * poissvmwalkpdf(x(trial_i, trial_j), mu, k, xi);
-        swap = (1 - p_mem) * poissvmwalkpdf(x(trial_i, trial_j), ...
+        in_mind = p_mem * JN14_pdf_mu(x(trial_i, trial_j), mu, k, xi);
+        swap = (1 - p_mem) * JN14_pdf_mu(x(trial_i, trial_j), ...
             mu + d_stim(trial_i, trial_j), k, xi);
         p(trial_i, trial_j) = in_mind + swap;
     end
