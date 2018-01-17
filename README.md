@@ -173,3 +173,12 @@ Please send bug reports and any questions to dpb6@nyu.edu as well.
 
                   Repeat this process for the other ITIs (6 and 10).
 
+    Stop Point 6: In scripts/bootstrap_dog_wm.py, replace sub_num with a tuple
+                  of the sub_nums for Experiment 2.  Set task_name to 'exp2'.  
+                  Set only_delay to 1.  Then run this script 1,000 times (--k 1
+                  to --k 1000).
+
+                  Update the value of only_delay in bootstrap_dog_wm.py to be
+                  3.  Then rerun it 1,000 times.
+
+                  Repeat this process for the other ITIs (6 and 10).

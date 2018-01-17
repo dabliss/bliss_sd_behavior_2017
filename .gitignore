@@ -17,3 +17,4 @@ matlab/swap_loglike.m
 matlab/vonmisescdf.m
 matlab/vonmisespdf.m
 matlab/wrap.m
+*.png

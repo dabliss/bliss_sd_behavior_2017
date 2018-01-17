@@ -1089,6 +1089,8 @@ def plot_bars(data_frames, labels, package_dir, previous=False,
     results_dir = os.path.join(package_dir, 'results', task_name)
     n_subs = len(labels)
     delays = np.array([0.0, 1.0, 3.0, 6.0, 10.0])
+    if task_name == 'exp2':
+        delays = delays[1:]
     n_delays = len(delays)
     
     # Initialize the array for bar heights.
@@ -1109,13 +1111,20 @@ def plot_bars(data_frames, labels, package_dir, previous=False,
             # For each delay, make arrays that collapse over
             # subjects for d_stim and error.
             for j, d in enumerate(delays):
-                diff = np.array(df.loc[df.delays == d, 'd_stim'])
+                if task_name == 'exp2':
+                    diff = np.array(df.loc[df.itis == d, 'd_stim'])
+                else:
+                    diff = np.array(df.loc[df.delays == d, 'd_stim'])
                 ind = ~np.isnan(diff)
                 diff_rad = np.deg2rad(diff[ind])
                 concat_diff_rad[j] = np.concatenate([concat_diff_rad[j],
                                                      diff_rad])
-                error = np.array(df.loc[df.delays == d,
-                                        'global_resid_error'])
+                if task_name == 'exp2':
+                    error = np.array(df.loc[df.itis == d,
+                                     'global_resid_error'])
+                else:
+                    error = np.array(df.loc[df.delays == d,
+                                     'global_resid_error'])
                 error_rad = np.deg2rad(error[ind])
                 concat_error_rad[j] = np.concatenate([concat_error_rad[j],
                                                       error_rad])
@@ -1149,7 +1158,7 @@ def plot_bars(data_frames, labels, package_dir, previous=False,
     n_permutations = 10000
     for j, d in enumerate(delays):
         if not previous:
-            if j == 0:
+            if d == 0:
                 if use_clifford:
                     boot_res = np.loadtxt(os.path.join(
                             results_dir,
@@ -1207,16 +1216,19 @@ def plot_bars(data_frames, labels, package_dir, previous=False,
         ci_low[j] = delay_actual_p2p[j] - delta_star_25
         ci_high[j] = delay_actual_p2p[j] - delta_star_975
 
-    f, ax_arr = plt.subplots(1, 1, figsize=(8.2225, 5.5))
+    if task_name == 'exp2':
+        f, ax_arr = plt.subplots(1, 1, figsize=(7.475, 5.5))
+    else:
+        f, ax_arr = plt.subplots(1, 1, figsize=(8.2225, 5.5))
     width = 0.6
 
     plt.axhline(0, color='k', linestyle='--', linewidth=1)
-    print np.rad2deg(delay_actual_p2p)
     ci_low = np.rad2deg(ci_low)
     ci_high = np.rad2deg(ci_high)
-    delay_actual_p2p = np.rad2deg(delay_actual_p2p)
     print ci_low
+    print np.rad2deg(delay_actual_p2p)
     print ci_high
+    delay_actual_p2p = np.rad2deg(delay_actual_p2p)
     plt.bar(delays, delay_actual_p2p,
             yerr=(delay_actual_p2p - ci_low,
                   ci_high - delay_actual_p2p),
@@ -1225,7 +1237,10 @@ def plot_bars(data_frames, labels, package_dir, previous=False,
                                                 'capsize': 3}, align='center',
             edgecolor='k')
 
-    plt.xlim(-0.9, 10.9)
+    if task_name == 'exp2':
+        plt.xlim(0.1, 10.9)
+    else:
+        plt.xlim(-0.9, 10.9)
     if ylim is not None:
         plt.ylim(*ylim)
     plt.gca().set_xticks(delays)
@@ -1233,7 +1248,11 @@ def plot_bars(data_frames, labels, package_dir, previous=False,
                               fontsize=18)
     plt.gca().set_yticklabels(plt.gca().get_yticks(), fontsize=18)
     if not previous:
-        plt.xlabel("Length of current trial's delay period (s)", fontsize=24)
+        if task_name == 'exp2':
+            plt.xlabel('Preceding ITI (s)', fontsize=24)
+        else:
+            plt.xlabel("Length of current trial's delay period (s)",
+                       fontsize=24)
     else:
         plt.xlabel("Previous trial's delay (s)", fontsize=24)
     plt.ylabel('Serial dependence ($^\circ$)', fontsize=24)
@@ -1244,7 +1263,9 @@ def plot_bars(data_frames, labels, package_dir, previous=False,
         return
     if previous and not use_clifford:
         plt.savefig('plot_bars_previous_dog.png', bbox_inches='tight')
-    if not previous:
+    elif task_name == 'exp2':
+        plt.savefig('plot_bars_wm_iti.png', bbox_inches='tight')
+    elif not previous:
         plt.savefig('plot_bars_wm.png', bbox_inches='tight')
     else:
         plt.savefig('plot_bars_previous.png', bbox_inches='tight')
