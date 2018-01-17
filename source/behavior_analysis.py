@@ -15,8 +15,7 @@ MODELS = np.array(('VMRW', 'VM', 'VP', 'VMRW+attraction', 'VMRW+swap',
                    'VP_dog'))
 
 
-def get_subject_data(subject, sessions, task, keys, indices,
-                     n_trials_per_session, data_dir):
+def get_subject_data(subject, sessions, task, keys, indices, data_dir):
 
     """Load a subject's data.
 
@@ -38,8 +37,8 @@ def get_subject_data(subject, sessions, task, keys, indices,
     indices : sequence
       Indices in session_details corresponding to the keys.
 
-    n_trials_per_session : integer
-      Number of trials per session.
+    data_dir : string
+      Top-level directory for the project.
 
     Returns
     -------
@@ -62,7 +61,7 @@ def get_subject_data(subject, sessions, task, keys, indices,
 
     # Load the presentation data for the subject.
     for session in sessions:
-        session_file = os.path.join(data_dir, 'session_details_%03d_%03d.mat'
+        session_file = os.path.join(data_dir, 'session_details_%03d_%03d'
                                     % (subject, session))
         exec 'session_%03d = sio.loadmat("%s")' % (session, session_file)
         session_slice = 'session_%03d["session_details"][0, :]' % session
