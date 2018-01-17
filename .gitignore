@@ -3,3 +3,17 @@
 data/
 proc_data/
 results/
+matlab/JN14_cdf.m
+matlab/JN14_pdf.m
+matlab/besseliln.m
+matlab/circspace.m
+matlab/demo.m
+matlab/example_data.mat
+matlab/fastbesseliln0.m
+matlab/flat.m
+matlab/kluyver_density.mat
+matlab/norm_swap_loglike.m
+matlab/swap_loglike.m
+matlab/vonmisescdf.m
+matlab/vonmisespdf.m
+matlab/wrap.m
