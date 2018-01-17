@@ -94,13 +94,19 @@ def get_subject_data(subject, sessions, task, keys, indices, data_dir):
     return all_sessions
 
 
-def add_columns(df):
+def add_columns(df, first_trial_indices, last_trial_indices):
     """Add columns to df.
 
     Parameters
     ----------
     df : pandas.DataFrame
       Data Frame for a subject.
+
+    first_trial_indices : sequence
+      Indices marking the first trial in every session.
+
+    last_trial_indices : sequence
+      Indices marking the last trial in every session.
 
     Returns
     -------
@@ -114,14 +120,13 @@ def add_columns(df):
                             np.nan)
     prev_delay = np.insert(np.array(df.delays, dtype=float)[:-1], 0,
                            np.nan)
-    n_trials_per_session = 25
     # The first trial of each session (not just the overall first
     # trial) has no previous stimulus.
-    prev_stim[::n_trials_per_session] = np.nan
-    prev_delay[::n_trials_per_session] = np.nan
+    prev_stim[first_trial_indices] = np.nan
+    prev_delay[first_trial_indices] = np.nan
     # The last trial of each session (not just the overall
     # last trial) has no future stimulus.
-    future_stim[n_trials_per_session-1::n_trials_per_session] = np.nan
+    future_stim[last_trial_indices] = np.nan
     df['prev_stim'] = prev_stim
     df['prev_delay'] = prev_delay
     df['future_stim'] = future_stim
