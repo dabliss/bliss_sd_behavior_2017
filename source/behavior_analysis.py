@@ -377,7 +377,7 @@ def print_fit_goodness(data_frames):
 
 def save_for_permutation(data_frames, sub_nums, package_dir, task_name='',
                          perception=False, only_delay=None, previous=False,
-                         future=False):
+                         future=False, only_iti=None):
 
     """Save d_stim and global_resid_error for permutation tests.
 
@@ -409,6 +409,9 @@ def save_for_permutation(data_frames, sub_nums, package_dir, task_name='',
     future : boolean (optional)
       Whether or not to use future_d_stim as d_stim.
 
+    only_iti : integer (optional)
+      Only ITI to use.
+
     """
     
     data_dir = os.path.join(package_dir, 'proc_data', task_name)
@@ -432,7 +435,10 @@ def save_for_permutation(data_frames, sub_nums, package_dir, task_name='',
                                                                   per_string,
                                                                   only_delay)
             except TypeError:
-                if perception:
+                if only_iti:
+                    d_stim_name = f_name + '_d_stim_%s_%02d.npy' % (task_name,
+                                                                    only_iti)
+                elif perception:
                     d_stim_name = f_name + '_d_stim_%s%s.npy' % (task_name,
                                                                  per_string)
                 else:
@@ -451,7 +457,9 @@ def save_for_permutation(data_frames, sub_nums, package_dir, task_name='',
         if perception:
             d_stim = np.array(df.loc[df.delays == 0, 'd_stim'])
         elif only_delay is None:
-            if not future:
+            if only_iti:
+                d_stim = np.array(df.loc[df.itis == only_iti, 'd_stim'])
+            elif not future:
                 d_stim = np.array(df['d_stim'])
             else:
                 d_stim = np.array(df['d_stim_future'])
@@ -469,7 +477,10 @@ def save_for_permutation(data_frames, sub_nums, package_dir, task_name='',
                 error_name = (f_name + '_global_resid_error_%s%s_%02d.npy' % (
                     task_name, per_string, only_delay))
             except TypeError:
-                if perception:
+                if only_iti:
+                    error_name = (f_name + '_global_resid_error_%s_%02d.npy' %
+                                  (task_name, only_iti))
+                elif perception:
                     error_name = (f_name + '_global_resid_error_%s%s.npy' % (
                         task_name, per_string))
                 else:
@@ -489,7 +500,11 @@ def save_for_permutation(data_frames, sub_nums, package_dir, task_name='',
             if perception:
                 error = np.array(df.loc[df.delays == 0, 'global_resid_error'])
             elif only_delay is None:
-                error = np.array(df['global_resid_error'])
+                if only_iti is None:
+                    error = np.array(df['global_resid_error'])
+                else:
+                    error = np.array(df.loc[df.itis == only_iti,
+                                            'global_resid_error'])
             else:
                 error = np.array(df.loc[df.delays == only_delay,
                                         'global_resid_error'])
