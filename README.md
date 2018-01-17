@@ -156,3 +156,9 @@ Please send bug reports and any questions to dpb6@nyu.edu as well.
                   replace sub_num with a tuple of the sub_nums for Experiment
                   2.  Set task_name to 'exp2'.  Then run this script 1,000 
                   times (--k 1 to --k 1000).
+
+    Stop Point 4: In scripts/bootstrap_dog_all_future.py, replace sub_num with 
+                  a tuple of the sub_nums for Experiment 2.  Set task_name to
+                  'exp2'.  Then run this script 1,000 times (--k 1 to --k 
+                  1000).
+
