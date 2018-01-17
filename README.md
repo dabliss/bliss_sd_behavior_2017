@@ -53,22 +53,22 @@ Please send bug reports and any questions to dpb6@nyu.edu as well.
 
                   Repeat this process for the other delays (6 and 10).
 
-    Stop Point 7: In scripts/bootstrap_dog_perception.py, change sub_name to 8.
+    Stop Point 7: In scripts/bootstrap_dog_perception.py, change sub_num to 8.
                   Then run this script 1,000 times.
 
-                  In scripts/bootstrap_dog_wm.py, change sub_name to 8.  Change
+                  In scripts/bootstrap_dog_wm.py, change sub_num to 8.  Change
                   only_delay to 1.  Then run it 1,000 times.
 
                   Run scripts/bootstrap_dog_wm.py for the other delays (3, 6,
                   and 10).
 
-                  Then repeat all the steps in this stop point for sub_names
+                  Then repeat all the steps in this stop point for sub_num
                   49, 26, and 1.
 
     Stop Point 8: In scripts/perform_permutation_test_dog_all_delays.py, change
-                  sub_name to 8.  Then run this script 1,000 times.
+                  sub_num to 8.  Then run this script 1,000 times.
 
-                  Repeat this for each of the other sub_names in the cell
+                  Repeat this for each of the other sub_nums in the cell
                   immediately below STOP POINT 8 in the notebook.
 
                   Repeat this process for scripts/bootstrap_dog_all.py.
@@ -76,7 +76,7 @@ Please send bug reports and any questions to dpb6@nyu.edu as well.
     Stop Point 9: Run scripts/perform_permutation_test_clifford_all_delays.py
                   1,000 times.
 
-                  Repeat this for each of the other sub_names in the cell
+                  Repeat this for each of the other sub_nums in the cell
                   immediately below STOP POINT 9 in the notebook.
 
                   Repeat this process for scripts/bootstrap_clifford_all.py.
@@ -137,3 +137,14 @@ Please send bug reports and any questions to dpb6@nyu.edu as well.
                    where n is the subject number and d is the delay number
                    between 1 and 5 (0 s = 1, 1 s = 2, 3 s = 3, 6 s = 4, 10 s =
                    5).
+
+(3) Open notebooks/experiment_two.ipynb.
+
+(4) Execute every cell in the notebook in order, stopping only at labeled STOP
+    POINTS.
+
+    Stop Point 1: In scripts/perform_permutation_test_dog_all_delays.py,
+                  replace sub_num with a tuple of the sub_nums for Experiment
+                  2.  Set task_name to 'exp2'.  Then run this script 1,000 
+                  times (--k 1 to --k 1000).
+
