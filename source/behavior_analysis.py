@@ -1573,7 +1573,7 @@ def save_for_matlab(data_frames, labels, package_dir, task_name):
                         {d_stim_name: d_stim})
         
 
-def load_all_fits(labels):
+def load_all_fits(labels, package_dir, task_name):
     """Load fits for all models.
 
     Returns
@@ -1587,11 +1587,11 @@ def load_all_fits(labels):
               'VP_dog_NM')
     all_fits = []
     for mod in models:
-        all_fits.append(load_fits(labels, mod))
+        all_fits.append(load_fits(labels, mod, package_dir, task_name))
     return all_fits
             
 
-def load_fits(subs, model):
+def load_fits(subs, model, package_dir, task_name):
     """Load fits for a model.
 
     Parameters
@@ -1604,14 +1604,19 @@ def load_fits(subs, model):
       'EPA', 'EP_with_guessing', 'EP_with_history', 'EP_GH', 'VPA',
       'VP_with_guessing', 'VP_with_history', or 'VP_GH'.
 
+    package_dir : string
+      Top-level directory for the project.
+
+    task_name : string
+      Specifier for the task.
+
     Returns
     -------
     fit_dict : dictionary
       Dictionary with fits.
 
     """
-    package_dir = '/home/despo/dbliss/dopa_net/'
-    data_dir = package_dir + 'behavioral_experiments/psychtoolbox/data/'
+    data_dir = os.path.join(package_dir, 'results', task_name)
     delays = [0, 1, 3, 6, 10]
     fit_dict = {}
     # Determine whether this model has any fixed parameters.
@@ -1628,12 +1633,11 @@ def load_fits(subs, model):
             attempt = 1
             while True:
                 if no_fixed:
-                    f_name = 's%03d_%02d_%s_%02d.mat' % (lab, d, model,
-                                                         attempt)
+                    f_name = 's%03d_%02d_%s_%02d' % (lab, d, model, attempt)
                 else:
-                    f_name = 's%03d_%s_%02d.mat' % (lab, model, attempt)
+                    f_name = 's%03d_%s_%02d' % (lab, model, attempt)
                 try:
-                    fit = sio.loadmat(data_dir + f_name)
+                    fit = sio.loadmat(os.path.join(data_dir, f_name))
                 except IOError:
                     break
                 except TypeError:
@@ -1654,6 +1658,40 @@ def load_fits(subs, model):
             if not no_fixed:
                 break
     return fit_dict
+
+
+def get_best_attempt(model, attempt_range=None):
+    """Return number of best attempt for a model.
+
+    Parameters
+    ----------
+    model : dictionary
+      Fits for a particular model and dataset.
+
+    attempt_range : sequence
+      Lowest and highest attempt numbers to consider.
+
+    Returns
+    -------
+    best_attempt : integer
+      Number of the best attempt.
+
+    """
+    if attempt_range is None:
+        attempt_low = 1
+        attempt_high = len(model.keys())
+    else:
+        attempt_low, attempt_high = attempt_range
+    best_aic = np.inf
+    for attempt in range(attempt_low, attempt_high + 1):
+        try:
+            aic = model[attempt]['aic'][0][0]
+        except KeyError:
+            aic = -model[attempt]['log_like'][0][0]
+        if aic < best_aic:
+            best_aic = aic
+            best_attempt = attempt
+    return best_attempt
 
 
 def plot_model_fits(fits, labels, which_models=None, exclude_models=None,
