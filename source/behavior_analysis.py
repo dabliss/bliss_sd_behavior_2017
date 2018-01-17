@@ -799,6 +799,8 @@ def perform_permutation_test_conditions(data_frames, labels, package_dir,
     
     results_dir = os.path.join(package_dir, 'results', task_name)
     delays = np.array([0.0, 1.0, 3.0, 6.0, 10.0])
+    if task_name == 'exp2':
+        delays = delays[1:]
     n_delays = len(delays)
     n_permutations = 10000
     diff_rad_concat = [np.array([]) for d in delays]
@@ -806,13 +808,17 @@ def perform_permutation_test_conditions(data_frames, labels, package_dir,
     for i, lab in enumerate(labels):
         df = data_frames[i]
         for j, d in enumerate(delays):
-            if not previous:
+            if task_name == 'exp2':
+                diff = np.array(df.loc[df.itis == d, 'd_stim'])
+            elif not previous:
                 diff = np.array(df.loc[df.delays == d, 'd_stim'])
             else:
                 diff = np.array(df.loc[df.prev_delay == d, 'd_stim'])
             ind = ~np.isnan(diff)
             diff_rad = np.deg2rad(diff[ind])
-            if not previous:
+            if task_name == 'exp2':
+                error = np.array(df.loc[df.itis == d, 'global_resid_error'])
+            elif not previous:
                 error = np.array(df.loc[df.delays == d, 'global_resid_error'])
             else:
                 error = np.array(df.loc[df.prev_delay == d,
@@ -841,7 +847,7 @@ def perform_permutation_test_conditions(data_frames, labels, package_dir,
              actual_s_values[j], _) = fit_dog(error_rad_concat[j],
                                               diff_rad_concat[j])
         if not previous:
-            if j == 0:
+            if d == 0:
                 if use_clifford:
                     perm_res = np.loadtxt(os.path.join(
                             results_dir,
@@ -908,7 +914,46 @@ def perform_permutation_test_conditions(data_frames, labels, package_dir,
                                                           fit.min())
             p2p_permuted[i, d] = peak_to_peak
 
-    if not previous:
+    if task_name == 'exp2':
+        # Print significance of each ITI.
+        p = np.count_nonzero(p2p_permuted[:, 0] >= p2p_actual[0]) / \
+                             float(n_permutations)
+        print '1:', p
+        p = np.count_nonzero(p2p_permuted[:, 1] >= p2p_actual[1]) / \
+                             float(n_permutations)
+        print '3:', p
+        p = np.count_nonzero(p2p_permuted[:, 2] >= p2p_actual[2]) / \
+                             float(n_permutations)
+        print '6:', p
+        p = np.count_nonzero(np.abs(p2p_permuted[:, 3]) >=
+                             abs(p2p_actual[3])) / float(n_permutations)
+        print '10:', p
+        # Print significance of the comparisons.
+        p = np.count_nonzero((p2p_permuted[:, 0] - p2p_permuted[:, 1]) >=
+                             (p2p_actual[0] - p2p_actual[1])) / \
+                             float(n_permutations)
+        print '3 < 1:', p
+        p = np.count_nonzero((p2p_permuted[:, 0] - p2p_permuted[:, 2]) >=
+                             (p2p_actual[0] - p2p_actual[2])) / \
+                             float(n_permutations)
+        print '6 < 1:', p
+        p = np.count_nonzero((p2p_permuted[:, 0] - p2p_permuted[:, 3]) >=
+                             (p2p_actual[0] - p2p_actual[3])) / \
+                             float(n_permutations)
+        print '10 < 1:', p
+        p = np.count_nonzero((p2p_permuted[:, 1] - p2p_permuted[:, 2]) >=
+                             (p2p_actual[1] - p2p_actual[2])) / \
+                             float(n_permutations)
+        print '6 < 3:', p
+        p = np.count_nonzero((p2p_permuted[:, 1] - p2p_permuted[:, 3]) >=
+                             (p2p_actual[1] - p2p_actual[3])) / \
+                             float(n_permutations)
+        print '10 < 3:', p
+        p = np.count_nonzero((p2p_permuted[:, 2] - p2p_permuted[:, 3]) >=
+                             (p2p_actual[2] - p2p_actual[3])) / \
+                             float(n_permutations)
+        print '10 < 6:', p
+    elif not previous:
         # Print significance of each delay.
         p = np.count_nonzero(np.abs(p2p_permuted[:, 0]) >=
                              abs(p2p_actual[0])) / float(n_permutations)

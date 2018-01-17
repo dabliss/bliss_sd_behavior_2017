@@ -162,3 +162,14 @@ Please send bug reports and any questions to dpb6@nyu.edu as well.
                   'exp2'.  Then run this script 1,000 times (--k 1 to --k 
                   1000).
 
+    Stop Point 5: In scripts/perform_permutation_test_dog_wm.py, replace
+                  sub_num with a tuple of the sub_nums for Experiment 2.  Set
+                  task_name to 'exp2'.  Set only_delay to 1.  Then run this
+                  script 1,000 times (--k 1 to --k 1000).
+
+                  Update the value of only_delay in
+                  perform_permutation_test_dog_wm.py to be 3.  Then rerun it
+                  1,000 times.
+
+                  Repeat this process for the other ITIs (6 and 10).
+
