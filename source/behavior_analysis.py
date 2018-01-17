@@ -94,7 +94,7 @@ def get_subject_data(subject, sessions, task, keys, indices, data_dir):
     return all_sessions
 
 
-def add_columns(df, first_trial_indices, last_trial_indices):
+def add_columns(df, first_trial_indices, last_trial_indices, task_name='exp1'):
     """Add columns to df.
 
     Parameters
@@ -108,6 +108,9 @@ def add_columns(df, first_trial_indices, last_trial_indices):
     last_trial_indices : sequence
       Indices marking the last trial in every session.
 
+    task_name : string (optional)
+      Specifier for the task.
+
     Returns
     -------
     df : pandas.DataFrame
@@ -118,17 +121,20 @@ def add_columns(df, first_trial_indices, last_trial_indices):
     prev_stim = np.insert(np.array(df[key])[:-1], 0, np.nan)
     future_stim = np.insert(np.array(df[key])[1:], len(df[key]) - 1,
                             np.nan)
-    prev_delay = np.insert(np.array(df.delays, dtype=float)[:-1], 0,
-                           np.nan)
+    if task_name == 'exp1':
+        prev_delay = np.insert(np.array(df.delays, dtype=float)[:-1], 0,
+                               np.nan)
     # The first trial of each session (not just the overall first
     # trial) has no previous stimulus.
     prev_stim[first_trial_indices] = np.nan
-    prev_delay[first_trial_indices] = np.nan
+    if task_name == 'exp1':
+        prev_delay[first_trial_indices] = np.nan
     # The last trial of each session (not just the overall
     # last trial) has no future stimulus.
     future_stim[last_trial_indices] = np.nan
     df['prev_stim'] = prev_stim
-    df['prev_delay'] = prev_delay
+    if task_name == 'exp1':
+        df['prev_delay'] = prev_delay
     df['future_stim'] = future_stim
     d_stim = prev_stim - np.array(df[key])
     d_stim_future = future_stim - np.array(df[key])
