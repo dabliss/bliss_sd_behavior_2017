@@ -127,8 +127,9 @@ Please send bug reports and any questions to dpb6@nyu.edu as well.
                    save_EP_dog_NM_fits.m
                    save_VP_dog_NM_fits.m
 
-                   Each of these scripts takes a single argument (k) that
-                   uniquely specifies a subject/delay combination.  This k
+                   Each of these scripts takes two arguments: the full path to
+                   the top-level directory of the repository and an integer k 
+                   that uniquely specifies a subject/delay combination.  This k
                    value is computed as follows:
 
                    k = (n - 1) * 5 + d,
