@@ -3,13 +3,13 @@
 Code needed to reproduce the analysis of behavioral data in Bliss et al., 2017, 
 Sci Rep.
 
-For access to the data, please contact Dan Bliss at dpb6@nyu.edu.
+For access to the data, please contact Dan Bliss at dbliss@bard.edu.
 
 This package depends on code Paul Bays has written and made available at
 www.paulbays.com/code/JN14.  Paul's code should be unzipped in the matlab
 directory of this repo.
 
-Please send bug reports and any questions to dpb6@nyu.edu as well.
+Please send bug reports and any questions to dbliss@bard.edu as well.
 
 ## Recipe
 
