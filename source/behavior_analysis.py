@@ -53,8 +53,8 @@ def get_subject_data(subject, sessions, task, keys, indices, data_dir):
     for session in sessions:
         results_file = os.path.join(data_dir, '%03d_%03d_results.txt' %
                                     (subject, session))
-        exec 'session_%03d = pd.read_csv("%s", sep="\t")' % (session,
-                                                             results_file)
+        exec('session_%03d = pd.read_csv("%s", sep="\t")' % (session,
+                                                             results_file))
     all_sessions_response = pd.concat([eval('session_%03d' % session) for
                                        session in sessions], 
                                       ignore_index=True)
@@ -63,14 +63,14 @@ def get_subject_data(subject, sessions, task, keys, indices, data_dir):
     for session in sessions:
         session_file = os.path.join(data_dir, 'session_details_%03d_%03d'
                                     % (subject, session))
-        exec 'session_%03d = sio.loadmat("%s")' % (session, session_file)
+        exec('session_%03d = sio.loadmat("%s")' % (session, session_file))
         session_slice = 'session_%03d["session_details"][0, :]' % session
         data_dict = {}
         for k, i in zip(keys, indices):
             command = 'np.squeeze(zip(*%s)[%d])' % (session_slice, i)
-            exec '%s = %s' % (k, command)
+            exec('%s = %s' % (k, command))
             data_dict[k] = eval(k)
-        exec 'session_%03d = pd.DataFrame(data_dict)' % (session,)
+        exec('session_%03d = pd.DataFrame(data_dict)' % (session,))
     all_sessions_presentation = pd.concat([eval('session_%03d' % session) for
                                            session in sessions],
                                           ignore_index=True)
@@ -370,9 +370,9 @@ def print_fit_goodness(data_frames):
         aic = 2 * k + total_n * np.log(rss)
         aic_c_values[1, i] = aic + 2 * k * (k + 1) / (total_n - k - 1)
 
-    print 'Clifford - DoG:'
-    print (aic_c_values[0, :] - aic_c_values[1, :]).mean()
-    print (aic_c_values[0, :] - aic_c_values[1, :]).std() / np.sqrt(n_subs)
+    print('Clifford - DoG:')
+    print((aic_c_values[0, :] - aic_c_values[1, :]).mean())
+    print((aic_c_values[0, :] - aic_c_values[1, :]).std() / np.sqrt(n_subs))
 
 
 def save_for_permutation(data_frames, sub_nums, package_dir, task_name='',
@@ -636,7 +636,7 @@ def perform_permutation_test(data_frames, labels, package_dir, concat=False,
                         n_permutations)
                 else:
                     raise ValueError('a is zero!')
-                print 's%03d' % lab, 'p-value:', c_p, 'p2p:', np.rad2deg(p2p_actual)
+                print('s%03d' % lab, 'p-value:', c_p, 'p2p:', np.rad2deg(p2p_actual))
 
             else:
 
@@ -663,7 +663,7 @@ def perform_permutation_test(data_frames, labels, package_dir, concat=False,
                         n_permutations)
                 else:
                     raise ValueError('m is zero!')
-                print 's%03d' % (lab,), 'p-value:', c_p, 'p2p:', np.rad2deg(p2p_actual)
+                print('s%03d' % (lab,), 'p-value:', c_p, 'p2p:', np.rad2deg(p2p_actual))
                                          
     if concat:
 
@@ -713,7 +713,7 @@ def perform_permutation_test(data_frames, labels, package_dir, concat=False,
             else:
                 raise ValueError('a is zero!')
 
-        print 'p-value:', c_p, 'p2p:', np.rad2deg(p2p_actual)
+        print('p-value:', c_p, 'p2p:', np.rad2deg(p2p_actual))
 
 
 def print_confidence_interval(data_frames, labels, package_dir, future=False,
@@ -769,7 +769,7 @@ def print_confidence_interval(data_frames, labels, package_dir, future=False,
     ci_low = p2p - delta_star_25
     ci_high = p2p - delta_star_975
 
-    print np.rad2deg(ci_low), np.rad2deg(ci_high)
+    print(np.rad2deg(ci_low), np.rad2deg(ci_high))
 
 
 def perform_permutation_test_conditions(data_frames, labels, package_dir,
@@ -918,169 +918,169 @@ def perform_permutation_test_conditions(data_frames, labels, package_dir,
         # Print significance of each ITI.
         p = np.count_nonzero(p2p_permuted[:, 0] >= p2p_actual[0]) / \
                              float(n_permutations)
-        print '1:', p
+        print('1:', p)
         p = np.count_nonzero(p2p_permuted[:, 1] >= p2p_actual[1]) / \
                              float(n_permutations)
-        print '3:', p
+        print('3:', p)
         p = np.count_nonzero(p2p_permuted[:, 2] >= p2p_actual[2]) / \
                              float(n_permutations)
-        print '6:', p
+        print('6:', p)
         p = np.count_nonzero(np.abs(p2p_permuted[:, 3]) >=
                              abs(p2p_actual[3])) / float(n_permutations)
-        print '10:', p
+        print('10:', p)
         # Print significance of the comparisons.
         p = np.count_nonzero((p2p_permuted[:, 0] - p2p_permuted[:, 1]) >=
                              (p2p_actual[0] - p2p_actual[1])) / \
                              float(n_permutations)
-        print '3 < 1:', p
+        print('3 < 1:', p)
         p = np.count_nonzero((p2p_permuted[:, 0] - p2p_permuted[:, 2]) >=
                              (p2p_actual[0] - p2p_actual[2])) / \
                              float(n_permutations)
-        print '6 < 1:', p
+        print('6 < 1:', p)
         p = np.count_nonzero((p2p_permuted[:, 0] - p2p_permuted[:, 3]) >=
                              (p2p_actual[0] - p2p_actual[3])) / \
                              float(n_permutations)
-        print '10 < 1:', p
+        print('10 < 1:', p)
         p = np.count_nonzero((p2p_permuted[:, 1] - p2p_permuted[:, 2]) >=
                              (p2p_actual[1] - p2p_actual[2])) / \
                              float(n_permutations)
-        print '6 < 3:', p
+        print('6 < 3:', p)
         p = np.count_nonzero((p2p_permuted[:, 1] - p2p_permuted[:, 3]) >=
                              (p2p_actual[1] - p2p_actual[3])) / \
                              float(n_permutations)
-        print '10 < 3:', p
+        print('10 < 3:', p)
         p = np.count_nonzero((p2p_permuted[:, 2] - p2p_permuted[:, 3]) >=
                              (p2p_actual[2] - p2p_actual[3])) / \
                              float(n_permutations)
-        print '10 < 6:', p
+        print('10 < 6:', p)
     elif not previous:
         # Print significance of each delay.
         p = np.count_nonzero(np.abs(p2p_permuted[:, 0]) >=
                              abs(p2p_actual[0])) / float(n_permutations)
-        print '0:', p
+        print('0:', p)
         p = np.count_nonzero(p2p_permuted[:, 1] >= p2p_actual[1]) / \
                              float(n_permutations)
-        print '1:', p
+        print('1:', p)
         p = np.count_nonzero(p2p_permuted[:, 2] >= p2p_actual[2]) / \
                              float(n_permutations)
-        print '3:', p
+        print('3:', p)
         p = np.count_nonzero(p2p_permuted[:, 3] >= p2p_actual[3]) / \
                              float(n_permutations)
-        print '6:', p
+        print('6:', p)
         p = np.count_nonzero(p2p_permuted[:, 4] >= p2p_actual[4]) / \
                              float(n_permutations)
-        print '10:', p
+        print('10:', p)
 
         # Print significance of the comparisons.
         p = np.count_nonzero((p2p_permuted[:, 1] - p2p_permuted[:, 0]) >=
                              (p2p_actual[1] - p2p_actual[0])) / \
                              float(n_permutations)
-        print '1 > 0:', p
+        print('1 > 0:', p)
         p = np.count_nonzero((p2p_permuted[:, 2] - p2p_permuted[:, 0]) >=
                              (p2p_actual[2] - p2p_actual[0])) / \
                              float(n_permutations)
-        print '3 > 0:', p
+        print('3 > 0:', p)
         p = np.count_nonzero((p2p_permuted[:, 3] - p2p_permuted[:, 0]) >=
                              (p2p_actual[3] - p2p_actual[0])) / \
                              float(n_permutations)
-        print '6 > 0:', p
+        print('6 > 0:', p)
         p = np.count_nonzero((p2p_permuted[:, 4] - p2p_permuted[:, 0]) >=
                              (p2p_actual[4] - p2p_actual[0])) / \
                              float(n_permutations)
-        print '10 > 0:', p
+        print('10 > 0:', p)
         p = np.count_nonzero((p2p_permuted[:, 2] - p2p_permuted[:, 1]) >=
                              (p2p_actual[2] - p2p_actual[1])) / \
                              float(n_permutations)
-        print '3 > 1:', p
+        print('3 > 1:', p)
         p = np.count_nonzero((p2p_permuted[:, 3] - p2p_permuted[:, 1]) >=
                              (p2p_actual[3] - p2p_actual[1])) / \
                              float(n_permutations)
-        print '6 > 1:', p
+        print('6 > 1:', p)
         p = np.count_nonzero((p2p_permuted[:, 4] - p2p_permuted[:, 1]) >=
                              (p2p_actual[4] - p2p_actual[1])) / \
                              float(n_permutations)
-        print '10 > 1:', p
+        print('10 > 1:', p)
         p = np.count_nonzero((p2p_permuted[:, 3] - p2p_permuted[:, 2]) >=
                              (p2p_actual[3] - p2p_actual[2])) / \
                              float(n_permutations)
-        print '6 > 3:', p
+        print('6 > 3:', p)
         p = np.count_nonzero((p2p_permuted[:, 4] - p2p_permuted[:, 2]) >=
                              (p2p_actual[4] - p2p_actual[2])) / \
                              float(n_permutations)
-        print '10 > 3:', p
+        print('10 > 3:', p)
         p = np.count_nonzero((p2p_permuted[:, 4] - p2p_permuted[:, 3]) >=
                              (p2p_actual[4] - p2p_actual[3])) / \
                              float(n_permutations)
-        print '10 > 6:', p
+        print('10 > 6:', p)
     else:
         # Print significance of each delay.
         p = np.count_nonzero(p2p_permuted[:, 0] >=
                              p2p_actual[0]) / float(n_permutations)
-        print '0:', p
+        print('0:', p)
         p = np.count_nonzero(p2p_permuted[:, 1] >= p2p_actual[1]) / \
                              float(n_permutations)
-        print '1:', p
+        print('1:', p)
         p = np.count_nonzero(p2p_permuted[:, 2] >= p2p_actual[2]) / \
                              float(n_permutations)
-        print '3:', p
+        print('3:', p)
         p = np.count_nonzero(p2p_permuted[:, 3] >= p2p_actual[3]) / \
                              float(n_permutations)
-        print '6:', p
+        print('6:', p)
         p = np.count_nonzero(p2p_permuted[:, 4] >= p2p_actual[4]) / \
                              float(n_permutations)
-        print '10:', p
+        print('10:', p)
 
         # Print significance of the comparisons.
         p = np.count_nonzero(np.abs(p2p_permuted[:, 1] -
                                     p2p_permuted[:, 0]) >=
                              abs(p2p_actual[1] - p2p_actual[0])) / \
                              float(n_permutations)
-        print '1 > 0:', p
+        print('1 > 0:', p)
         p = np.count_nonzero(np.abs(p2p_permuted[:, 2] -
                                     p2p_permuted[:, 0]) >=
                              abs(p2p_actual[2] - p2p_actual[0])) / \
                              float(n_permutations)
-        print '3 > 0:', p
+        print('3 > 0:', p)
         p = np.count_nonzero(np.abs(p2p_permuted[:, 3] -
                                     p2p_permuted[:, 0]) >=
                              abs(p2p_actual[3] - p2p_actual[0])) / \
                              float(n_permutations)
-        print '6 > 0:', p
+        print('6 > 0:', p)
         p = np.count_nonzero(np.abs(p2p_permuted[:, 4] -
                                     p2p_permuted[:, 0]) >=
                              abs(p2p_actual[4] - p2p_actual[0])) / \
                              float(n_permutations)
-        print '10 > 0:', p
+        print('10 > 0:', p)
         p = np.count_nonzero(np.abs(p2p_permuted[:, 2] -
                                     p2p_permuted[:, 1]) >=
                              abs(p2p_actual[2] - p2p_actual[1])) / \
                              float(n_permutations)
-        print '3 > 1:', p
+        print('3 > 1:', p)
         p = np.count_nonzero(np.abs(p2p_permuted[:, 3] -
                                     p2p_permuted[:, 1]) >=
                              abs(p2p_actual[3] - p2p_actual[1])) / \
                              float(n_permutations)
-        print '6 > 1:', p
+        print('6 > 1:', p)
         p = np.count_nonzero(np.abs(p2p_permuted[:, 4] -
                                     p2p_permuted[:, 1]) >=
                              abs(p2p_actual[4] - p2p_actual[1])) / \
                              float(n_permutations)
-        print '10 > 1:', p
+        print('10 > 1:', p)
         p = np.count_nonzero(np.abs(p2p_permuted[:, 3] -
                                     p2p_permuted[:, 2]) >=
                              abs(p2p_actual[3] - p2p_actual[2])) / \
                              float(n_permutations)
-        print '6 > 3:', p
+        print('6 > 3:', p)
         p = np.count_nonzero(np.abs(p2p_permuted[:, 4] -
                                     p2p_permuted[:, 2]) >=
                              abs(p2p_actual[4] - p2p_actual[2])) / \
                              float(n_permutations)
-        print '10 > 3:', p
+        print('10 > 3:', p)
         p = np.count_nonzero(np.abs(p2p_permuted[:, 4] -
                                     p2p_permuted[:, 3]) >=
                              abs(p2p_actual[4] - p2p_actual[3])) / \
                              float(n_permutations)
-        print '10 > 6:', p
+        print('10 > 6:', p)
     
 
 def plot_bars(data_frames, labels, package_dir, previous=False,
@@ -1225,9 +1225,9 @@ def plot_bars(data_frames, labels, package_dir, previous=False,
     plt.axhline(0, color='k', linestyle='--', linewidth=1)
     ci_low = np.rad2deg(ci_low)
     ci_high = np.rad2deg(ci_high)
-    print ci_low
-    print np.rad2deg(delay_actual_p2p)
-    print ci_high
+    print(ci_low)
+    print(np.rad2deg(delay_actual_p2p))
+    print(ci_high)
     delay_actual_p2p = np.rad2deg(delay_actual_p2p)
     plt.bar(delays, delay_actual_p2p,
             yerr=(delay_actual_p2p - ci_low,
@@ -1328,12 +1328,12 @@ def plot_running_avg_with_fit(df, f_name, bin_width=350, bin_step=10,
     theta = np.linspace(-np.pi, np.pi, 1000)
     fit = m * clifford(theta, c, s)
     p2p = m * (fit.max() - fit.min())
-    print np.rad2deg(p2p)
+    print(np.rad2deg(p2p))
     plt.plot(np.rad2deg(theta), np.rad2deg(m * clifford(theta, c, s)),
              'orange', linewidth=3)
     fit = dog(theta, a, w)
     p2p = np.sign(a) * (fit.max() - fit.min())
-    print np.rad2deg(p2p)
+    print(np.rad2deg(p2p))
     plt.plot(np.rad2deg(theta), np.rad2deg(dog(theta, a, w)), 'k',
              linewidth=3)
 
@@ -1430,7 +1430,7 @@ def plot_ploner_fig_3(df):
 
     # Fit a power law to the variance.
     alpha, inner_add, beta = fit_power_law(delays, variance)
-    print alpha, inner_add, beta
+    print(alpha, inner_add, beta)
 
     # Plot the figure.
     plt.plot(delays, variance, 'k', linewidth=1)
@@ -1439,8 +1439,8 @@ def plot_ploner_fig_3(df):
     many_delays = np.linspace(0, 10, 1000)
     plt.plot(many_delays, alpha * (many_delays + inner_add) ** beta,
              'orange', linewidth=2)
-    print ci_low
-    print ci_high
+    print(ci_low)
+    print(ci_high)
     plt.fill_between(delays, ci_low, ci_high, alpha=0.25, color='k')
 
     # Format the figure.
@@ -1557,7 +1557,7 @@ def plot_indiv_subs(data_frames, labels, models, package_dir, supp=False,
     ci_low = np.rad2deg(ci_low)
     ci_high = np.rad2deg(ci_high)
 
-    print p2p_values
+    print(p2p_values)
 
     subs = np.arange(n_subs) * 5
     models = np.array(models)
@@ -1883,33 +1883,33 @@ def plot_model_fits(fits, labels, which_models=None, exclude_models=None,
 #    lefts = np.arange(n_models, dtype='float')
 #    width = 1.0
     if exclude_models is not None:
-        print models[0], '-', models[2]
-        print (aic_c_values[0, :] - aic_c_values[2, :]).mean()
-        print (aic_c_values[0, :] - aic_c_values[2, :]).std() / np.sqrt(n_subs)
-        print
-        print models[2], '-', models[1]
-        print (aic_c_values[2, :] - aic_c_values[1, :]).mean()
-        print (aic_c_values[2, :] - aic_c_values[1, :]).std() / np.sqrt(n_subs)
-        print
-        print models[0], '-', models[1]
-        print (aic_c_values[0, :] - aic_c_values[1, :]).mean()
-        print (aic_c_values[0, :] - aic_c_values[1, :]).std() / np.sqrt(n_subs)
+        print(models[0], '-', models[2])
+        print((aic_c_values[0, :] - aic_c_values[2, :]).mean())
+        print((aic_c_values[0, :] - aic_c_values[2, :]).std() / np.sqrt(n_subs))
+        print()
+        print(models[2], '-', models[1])
+        print((aic_c_values[2, :] - aic_c_values[1, :]).mean())
+        print((aic_c_values[2, :] - aic_c_values[1, :]).std() / np.sqrt(n_subs))
+        print()
+        print(models[0], '-', models[1])
+        print((aic_c_values[0, :] - aic_c_values[1, :]).mean())
+        print((aic_c_values[0, :] - aic_c_values[1, :]).std() / np.sqrt(n_subs))
     elif which_models[0] == 'VMRW':
-        print models[1], '-', models[0]
-        print (aic_c_values[1, :] - aic_c_values[0, :]).mean()
-        print (aic_c_values[1, :] - aic_c_values[0, :]).std() / np.sqrt(n_subs)
-        print
-        print models[2], '-', models[0]
-        print (aic_c_values[2, :] - aic_c_values[0, :]).mean()
-        print (aic_c_values[2, :] - aic_c_values[0, :]).std() / np.sqrt(n_subs)
+        print(models[1], '-', models[0])
+        print((aic_c_values[1, :] - aic_c_values[0, :]).mean())
+        print((aic_c_values[1, :] - aic_c_values[0, :]).std() / np.sqrt(n_subs))
+        print()
+        print(models[2], '-', models[0])
+        print((aic_c_values[2, :] - aic_c_values[0, :]).mean())
+        print((aic_c_values[2, :] - aic_c_values[0, :]).std() / np.sqrt(n_subs))
     else:
-        print models[1], '-', models[2]
-        print (aic_c_values[1, :] - aic_c_values[2, :]).mean()
-        print (aic_c_values[1, :] - aic_c_values[2, :]).std() / np.sqrt(n_subs)
-        print
-        print models[2], '-', models[0]
-        print (aic_c_values[2, :] - aic_c_values[0, :]).mean()
-        print (aic_c_values[2, :] - aic_c_values[0, :]).std() / np.sqrt(n_subs)
+        print(models[1], '-', models[2])
+        print((aic_c_values[1, :] - aic_c_values[2, :]).mean())
+        print((aic_c_values[1, :] - aic_c_values[2, :]).std() / np.sqrt(n_subs))
+        print()
+        print(models[2], '-', models[0])
+        print((aic_c_values[2, :] - aic_c_values[0, :]).mean())
+        print((aic_c_values[2, :] - aic_c_values[0, :]).std() / np.sqrt(n_subs))
 #    print aic_c_values[ind]
 #    barlist = plt.barh(lefts, aic_c_values[ind], width, ecolor='k',
 #                       color='gray')
