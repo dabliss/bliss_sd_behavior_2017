@@ -3,8 +3,7 @@ import os
 import pandas as pd
 import numpy as np
 from scipy import io as sio
-import matlab
-import matlab.engine
+import statsmodels.api as sm
 from scipy.optimize import least_squares
 import matplotlib.pyplot as plt
 from matplotlib import patches
@@ -189,16 +188,15 @@ def get_sys_error(df):
       Updated Data Frame.
     
     """
-    eng = matlab.engine.start_matlab()
     stimulus_angles = df['stimulus_angles']
     errors = df['errors']
     n_trials = len(stimulus_angles)
-    x = matlab.double(list(np.array([stimulus_angles,
-                                     stimulus_angles + 360,
-                                     stimulus_angles + 720]).flatten()))
-    y = matlab.double(list(np.tile(errors, 3)))
-    smoothed = eng.smooth(x, y, 155, 'loess')
-    sys_error = np.squeeze(np.array(smoothed)[n_trials:n_trials * 2])
+    x = np.array([stimulus_angles, stimulus_angles + 360,
+                  stimulus_angles + 720]).flatten()
+    y = np.tile(errors, 3)
+    smoothed = sm.nonparametric.lowess(y, x, frac=155/(n_trials*3),
+                                       return_sorted=False)
+    sys_error = smoothed[n_trials:n_trials * 2]
     df['global_sys_error'] = sys_error
     df['global_resid_error'] = df['errors'] - df['global_sys_error']
     return df
