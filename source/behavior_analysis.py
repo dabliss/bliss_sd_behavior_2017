@@ -50,30 +50,26 @@ def get_subject_data(subject, sessions, task, keys, indices, data_dir):
     data_dir = os.path.join(data_dir, 'data', task)
 
     # Load the response data for the subject.
+    session_dict = {}
     for session in sessions:
         results_file = os.path.join(data_dir, '%03d_%03d_results.txt' %
                                     (subject, session))
-        exec('session_%03d = pd.read_csv("%s", sep="\t")' % (session,
-                                                             results_file))
-    all_sessions_response = pd.concat([eval('session_%03d' % session) for
-                                       session in sessions], 
-                                      ignore_index=True)
+        session_dict[session] = pd.read_csv('%s' % results_file, sep='\t')
+    all_sessions_response = pd.concat([session_dict[session] for session in 
+                                       sessions], ignore_index=True)
 
     # Load the presentation data for the subject.
     for session in sessions:
         session_file = os.path.join(data_dir, 'session_details_%03d_%03d'
                                     % (subject, session))
-        exec('session_%03d = sio.loadmat("%s")' % (session, session_file))
-        session_slice = 'session_%03d["session_details"][0, :]' % session
+        session_dict[session] = sio.loadmat('%s' % session_file)
+        session_slice = session_dict[session]['session_details'][0, :]
         data_dict = {}
         for k, i in zip(keys, indices):
-            command = 'np.squeeze(zip(*%s)[%d])' % (session_slice, i)
-            exec('%s = %s' % (k, command))
-            data_dict[k] = eval(k)
-        exec('session_%03d = pd.DataFrame(data_dict)' % (session,))
-    all_sessions_presentation = pd.concat([eval('session_%03d' % session) for
-                                           session in sessions],
-                                          ignore_index=True)
+            data_dict[k] = np.squeeze(list(zip(*session_slice))[i])
+        session_dict[session] = pd.DataFrame(data_dict)
+    all_sessions_presentation = pd.concat([session_dict[session] for session in 
+                                           sessions], ignore_index=True)
 
     # Combine the response and presentation data.
     all_sessions = pd.concat([all_sessions_response,
